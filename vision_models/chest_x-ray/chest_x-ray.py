@@ -11,7 +11,8 @@ def classify_chest_xray(image_path):
     model.conv1 = nn.Conv2d(1, 64, kernel_size=7, stride=2, padding=3, bias=False) # Change input channels from 3 to 1 (grayscale images)
     model.fc = nn.Linear(512, 14)  # final fully connected layer
 
-    model.load_state_dict(torch.load('pre-trained_resnet18.pt'))
+    
+    model.load_state_dict(torch.load('models/model_epoch_66.pt'))
 
     model = model.to(device) # move the model to the GPU
 
