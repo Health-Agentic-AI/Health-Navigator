@@ -3,7 +3,7 @@ from typing import TypedDict, Literal
 from dotenv import load_dotenv
 import os
 
-load_dotenv('../../credentials.env')
+load_dotenv('C:\My Projects\Health-Navigator\credentials.env')
 
 
 def system_prompt_builder(input_text, available_attachments):
