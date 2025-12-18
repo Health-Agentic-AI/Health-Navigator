@@ -1,3 +1,4 @@
 *.npz
 *.pt 
 !model_epoch_66.pt
+!model_epoch_13.pt
