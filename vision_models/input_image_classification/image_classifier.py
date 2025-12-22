@@ -8,22 +8,22 @@ import os
 load_dotenv('C:\My Projects\Health-Navigator\credentials.env')
 
 class MedicalInputCheck(TypedDict):
-    image_type: Literal['chest_xray', 'colon_tissue', 'text', 'not_valid']
+    image_type: Literal['chest_xray', 'colon_tissue', 'text', 'not_valid_image']
 
 system_prompt = """
     You are a medical image classifier. Analyze the provided image and its title, then classify it into exactly one category.
 
     Classification Rules:
-    - chest_xray: ONLY if the image is a chest X-ray (frontal or lateral view of thorax). Any other type of X-ray → not_valid
+    - chest_xray: ONLY if the image is a chest X-ray (frontal or lateral view of thorax). Any other type of X-ray → not_valid_image
     - colon_tissue: ONLY if the image shows colon pathology tissue/histology slides
     - text: If the image primarily contains text (documents, screenshots, diagrams with text, etc.) - regardless of content relevance
-    - not_valid: Everything else (other medical images, non-medical images, unclear images, other anatomical X-rays, etc.)
+    - not_valid_image: Everything else (other medical images, non-medical images, unclear images, other anatomical X-rays, etc.)
 
     Important:
-    - When unsure, default to not_valid
+    - When unsure, default to not_valid_image
     - Consider both image content and title, and take the title as a strong hint towards classification
 
-    Output only one of these classes: 'chest_xray', 'colon_tissue', 'text', 'not_valid'
+    Output only one of these classes: 'chest_xray', 'colon_tissue', 'text', 'not_valid_image'
 """
 
 
