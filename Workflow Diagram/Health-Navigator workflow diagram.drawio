@@ -1,6 +1,6 @@
 <mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36" version="29.2.10">
   <diagram name="Page-1" id="FoH7uc9VNtGeSl--nc_r">
-    <mxGraphModel dx="5856" dy="1096" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+    <mxGraphModel dx="6239" dy="1143" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -121,9 +121,9 @@
           </mxGeometry>
         </mxCell>
         <mxCell id="yDWNk6znIDKUxYVE1vSK-38" parent="1" style="whiteSpace=wrap;html=1;rounded=0;" value="Agent&lt;div&gt;(Use the necessary image medical models and pass the results)&lt;/div&gt;" vertex="1">
-          <mxGeometry height="90" width="120" x="-3110" y="-220" as="geometry" />
+          <mxGeometry height="90" width="120" x="-3120" y="-220" as="geometry" />
         </mxCell>
-        <mxCell id="yDWNk6znIDKUxYVE1vSK-41" edge="1" parent="1" source="yDWNk6znIDKUxYVE1vSK-36" style="curved=1;endArrow=classic;html=1;entryX=1;entryY=0.25;entryDx=0;entryDy=0;exitX=0.39;exitY=0.137;exitDx=0;exitDy=0;exitPerimeter=0;" target="yDWNk6znIDKUxYVE1vSK-25" value="">
+        <mxCell id="yDWNk6znIDKUxYVE1vSK-41" edge="1" parent="1" source="yDWNk6znIDKUxYVE1vSK-36" style="curved=1;endArrow=classic;html=1;entryX=1;entryY=0.25;entryDx=0;entryDy=0;exitX=0.32;exitY=0.179;exitDx=0;exitDy=0;exitPerimeter=0;" target="yDWNk6znIDKUxYVE1vSK-25" value="">
           <mxGeometry height="50" relative="1" width="50" as="geometry">
             <Array as="points">
               <mxPoint x="-3600" y="-210" />
@@ -176,7 +176,7 @@
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
         <mxCell id="yDWNk6znIDKUxYVE1vSK-62" parent="1" style="rounded=1;whiteSpace=wrap;html=1;glass=0;" value="Aggregator" vertex="1">
-          <mxGeometry height="143.44" width="120" x="-2920" y="-54.22" as="geometry" />
+          <mxGeometry height="143.44" width="120" x="-2890" y="-54.22" as="geometry" />
         </mxCell>
         <mxCell id="yDWNk6znIDKUxYVE1vSK-63" edge="1" parent="1" source="yDWNk6znIDKUxYVE1vSK-38" style="edgeStyle=orthogonalEdgeStyle;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0.003;entryY=0.074;entryDx=0;entryDy=0;entryPerimeter=0;" target="yDWNk6znIDKUxYVE1vSK-62">
           <mxGeometry relative="1" as="geometry">
@@ -204,7 +204,7 @@
         </mxCell>
         <mxCell id="48MZo3OmgjpXJCcB6__6-7" connectable="0" parent="yDWNk6znIDKUxYVE1vSK-71" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" value="Medical" vertex="1">
           <mxGeometry relative="1" x="0.169" y="-9" as="geometry">
-            <mxPoint as="offset" />
+            <mxPoint x="-10" as="offset" />
           </mxGeometry>
         </mxCell>
         <mxCell id="yDWNk6znIDKUxYVE1vSK-74" parent="1" style="rounded=1;whiteSpace=wrap;html=1;" value="Extract Text&lt;div&gt;(from an image)&lt;/div&gt;" vertex="1">
@@ -281,7 +281,7 @@
         <mxCell id="_ZPv0TfCWMB7J-HcjxOJ-5" edge="1" parent="1" source="yDWNk6znIDKUxYVE1vSK-77" style="curved=1;endArrow=classic;html=1;rounded=0;exitX=0.25;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="yDWNk6znIDKUxYVE1vSK-1" value="">
           <mxGeometry height="50" relative="1" width="50" as="geometry">
             <Array as="points">
-              <mxPoint x="-2850" y="-440" />
+              <mxPoint x="-2820" y="-450" />
               <mxPoint x="-4020" y="-320" />
             </Array>
             <mxPoint x="-2730" y="-170" as="sourcePoint" />
@@ -294,7 +294,7 @@
           </mxGeometry>
         </mxCell>
         <mxCell id="SRNeHXxLHj1Ul6fkePaK-2" parent="1" style="whiteSpace=wrap;html=1;rounded=0;" value="Medical Vision Models" vertex="1">
-          <mxGeometry height="60" width="120" x="-3110" y="-330" as="geometry" />
+          <mxGeometry height="60" width="120" x="-3120" y="-340" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>
