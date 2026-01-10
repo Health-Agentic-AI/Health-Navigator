@@ -1,0 +1,1706 @@
+
+====================================================================================================
+Training started at: 2026-01-10 10:16:05
+Start Epoch: 1, End Epoch: 100
+====================================================================================================
+
+Epoch: 1
+Time: 9.75s
+Learning Rate: 0.003000
+Train Loss: 0.663352
+Train Accuracy: 0.773091
+Train Precision: 0.736980
+Train Recall: 0.849283
+Train F1-Score: 0.789156
+Train AUC-ROC: 0.844851
+Val Loss: 0.700176
+Val Accuracy: 0.654000
+Val Precision: 0.199511
+Val Recall: 0.887556
+Val F1-Score: 0.325789
+Val AUC-ROC: 0.843553
+----------------------------------------------------------------------------------------------------
+
+Epoch: 2
+Time: 8.79s
+Learning Rate: 0.003000
+Train Loss: 0.638890
+Train Accuracy: 0.784021
+Train Precision: 0.746278
+Train Recall: 0.860647
+Train F1-Score: 0.799393
+Train AUC-ROC: 0.857384
+Val Loss: 0.687536
+Val Accuracy: 0.654131
+Val Precision: 0.199649
+Val Recall: 0.888114
+Val F1-Score: 0.326010
+Val AUC-ROC: 0.840740
+----------------------------------------------------------------------------------------------------
+
+Epoch: 3
+Time: 8.71s
+Learning Rate: 0.003000
+Train Loss: 0.631554
+Train Accuracy: 0.787101
+Train Precision: 0.750012
+Train Recall: 0.861275
+Train F1-Score: 0.801802
+Train AUC-ROC: 0.861217
+Val Loss: 0.669630
+Val Accuracy: 0.670083
+Val Precision: 0.205128
+Val Recall: 0.870536
+Val F1-Score: 0.332021
+Val AUC-ROC: 0.841331
+----------------------------------------------------------------------------------------------------
+
+Epoch: 4
+Time: 9.46s
+Learning Rate: 0.003000
+Train Loss: 0.625145
+Train Accuracy: 0.789000
+Train Precision: 0.751673
+Train Recall: 0.863159
+Train F1-Score: 0.803568
+Train AUC-ROC: 0.864634
+Val Loss: 0.665687
+Val Accuracy: 0.665957
+Val Precision: 0.203071
+Val Recall: 0.870815
+Val F1-Score: 0.329341
+Val AUC-ROC: 0.840361
+----------------------------------------------------------------------------------------------------
+
+Epoch: 5
+Time: 8.19s
+Learning Rate: 0.003000
+Train Loss: 0.618707
+Train Accuracy: 0.791130
+Train Precision: 0.753380
+Train Recall: 0.865621
+Train F1-Score: 0.805610
+Train AUC-ROC: 0.867837
+Val Loss: 0.680214
+Val Accuracy: 0.665274
+Val Precision: 0.203499
+Val Recall: 0.876395
+Val F1-Score: 0.330301
+Val AUC-ROC: 0.838863
+----------------------------------------------------------------------------------------------------
+
+Epoch: 6
+Time: 9.04s
+Learning Rate: 0.003000
+Train Loss: 0.613494
+Train Accuracy: 0.793629
+Train Precision: 0.756943
+Train Recall: 0.865018
+Train F1-Score: 0.807380
+Train AUC-ROC: 0.870553
+Val Loss: 0.651744
+Val Accuracy: 0.684642
+Val Precision: 0.209553
+Val Recall: 0.847098
+Val F1-Score: 0.335989
+Val AUC-ROC: 0.837536
+----------------------------------------------------------------------------------------------------
+
+Epoch: 7
+Time: 9.15s
+Learning Rate: 0.003000
+Train Loss: 0.608433
+Train Accuracy: 0.795426
+Train Precision: 0.759373
+Train Recall: 0.864925
+Train F1-Score: 0.808719
+Train AUC-ROC: 0.872627
+Val Loss: 0.676373
+Val Accuracy: 0.665458
+Val Precision: 0.203013
+Val Recall: 0.872210
+Val F1-Score: 0.329365
+Val AUC-ROC: 0.838974
+----------------------------------------------------------------------------------------------------
+
+Epoch: 8
+Time: 8.44s
+Learning Rate: 0.003000
+Train Loss: 0.602812
+Train Accuracy: 0.797536
+Train Precision: 0.761259
+Train Recall: 0.866964
+Train F1-Score: 0.810680
+Train AUC-ROC: 0.875768
+Val Loss: 0.658483
+Val Accuracy: 0.682329
+Val Precision: 0.209603
+Val Recall: 0.856306
+Val F1-Score: 0.336772
+Val AUC-ROC: 0.838338
+----------------------------------------------------------------------------------------------------
+
+Epoch: 9
+Time: 7.70s
+Learning Rate: 0.003000
+Train Loss: 0.596896
+Train Accuracy: 0.799700
+Train Precision: 0.764278
+Train Recall: 0.866715
+Train F1-Score: 0.812280
+Train AUC-ROC: 0.878491
+Val Loss: 0.662356
+Val Accuracy: 0.666588
+Val Precision: 0.203079
+Val Recall: 0.868583
+Val F1-Score: 0.329192
+Val AUC-ROC: 0.836958
+----------------------------------------------------------------------------------------------------
+
+Epoch: 10
+Time: 8.42s
+Learning Rate: 0.003000
+Train Loss: 0.593638
+Train Accuracy: 0.801428
+Train Precision: 0.766278
+Train Recall: 0.867430
+Train F1-Score: 0.813723
+Train AUC-ROC: 0.880169
+Val Loss: 0.629461
+Val Accuracy: 0.686771
+Val Precision: 0.209966
+Val Recall: 0.841797
+Val F1-Score: 0.336100
+Val AUC-ROC: 0.835338
+----------------------------------------------------------------------------------------------------
+
+Epoch: 11
+Time: 7.74s
+Learning Rate: 0.003000
+Train Loss: 0.589610
+Train Accuracy: 0.802351
+Train Precision: 0.767357
+Train Recall: 0.867797
+Train F1-Score: 0.814492
+Train AUC-ROC: 0.881770
+Val Loss: 0.627001
+Val Accuracy: 0.686035
+Val Precision: 0.209638
+Val Recall: 0.842355
+Val F1-Score: 0.335724
+Val AUC-ROC: 0.834102
+----------------------------------------------------------------------------------------------------
+
+Epoch: 12
+Time: 7.72s
+Learning Rate: 0.003000
+Train Loss: 0.584656
+Train Accuracy: 0.804154
+Train Precision: 0.769170
+Train Recall: 0.869140
+Train F1-Score: 0.816105
+Train AUC-ROC: 0.883957
+Val Loss: 0.615887
+Val Accuracy: 0.691370
+Val Precision: 0.210843
+Val Recall: 0.830078
+Val F1-Score: 0.336272
+Val AUC-ROC: 0.831442
+----------------------------------------------------------------------------------------------------
+
+Epoch: 13
+Time: 8.85s
+Learning Rate: 0.003000
+Train Loss: 0.584068
+Train Accuracy: 0.804804
+Train Precision: 0.770798
+Train Recall: 0.867592
+Train F1-Score: 0.816336
+Train AUC-ROC: 0.884687
+Val Loss: 0.631532
+Val Accuracy: 0.683223
+Val Precision: 0.208052
+Val Recall: 0.842076
+Val F1-Score: 0.333665
+Val AUC-ROC: 0.835164
+----------------------------------------------------------------------------------------------------
+
+Epoch: 14
+Time: 8.42s
+Learning Rate: 0.003000
+Train Loss: 0.580109
+Train Accuracy: 0.806638
+Train Precision: 0.773306
+Train Recall: 0.867617
+Train F1-Score: 0.817751
+Train AUC-ROC: 0.886168
+Val Loss: 0.620330
+Val Accuracy: 0.699332
+Val Precision: 0.215388
+Val Recall: 0.829520
+Val F1-Score: 0.341980
+Val AUC-ROC: 0.833997
+----------------------------------------------------------------------------------------------------
+
+Epoch: 15
+Time: 8.67s
+Learning Rate: 0.003000
+Train Loss: 0.577720
+Train Accuracy: 0.806619
+Train Precision: 0.772902
+Train Recall: 0.868394
+Train F1-Score: 0.817870
+Train AUC-ROC: 0.886992
+Val Loss: 0.606621
+Val Accuracy: 0.691238
+Val Precision: 0.211586
+Val Recall: 0.835658
+Val F1-Score: 0.337674
+Val AUC-ROC: 0.833142
+----------------------------------------------------------------------------------------------------
+
+Epoch: 16
+Time: 8.73s
+Learning Rate: 0.003000
+Train Loss: 0.575197
+Train Accuracy: 0.808117
+Train Precision: 0.773812
+Train Recall: 0.870762
+Train F1-Score: 0.819429
+Train AUC-ROC: 0.888269
+Val Loss: 0.635102
+Val Accuracy: 0.691054
+Val Precision: 0.212091
+Val Recall: 0.839844
+Val F1-Score: 0.338659
+Val AUC-ROC: 0.833577
+----------------------------------------------------------------------------------------------------
+
+Epoch: 17
+Time: 9.07s
+Learning Rate: 0.003000
+Train Loss: 0.573373
+Train Accuracy: 0.808944
+Train Precision: 0.775557
+Train Recall: 0.869525
+Train F1-Score: 0.819857
+Train AUC-ROC: 0.889084
+Val Loss: 0.614846
+Val Accuracy: 0.705981
+Val Precision: 0.218036
+Val Recall: 0.820312
+Val F1-Score: 0.344504
+Val AUC-ROC: 0.831139
+----------------------------------------------------------------------------------------------------
+
+Epoch: 18
+Time: 8.00s
+Learning Rate: 0.003000
+Train Loss: 0.571997
+Train Accuracy: 0.809236
+Train Precision: 0.775137
+Train Recall: 0.871204
+Train F1-Score: 0.820368
+Train AUC-ROC: 0.889732
+Val Loss: 0.605789
+Val Accuracy: 0.692473
+Val Precision: 0.211882
+Val Recall: 0.832868
+Val F1-Score: 0.337823
+Val AUC-ROC: 0.830543
+----------------------------------------------------------------------------------------------------
+
+Epoch: 19
+Time: 8.93s
+Learning Rate: 0.003000
+Train Loss: 0.569838
+Train Accuracy: 0.810296
+Train Precision: 0.778501
+Train Recall: 0.867380
+Train F1-Score: 0.820541
+Train AUC-ROC: 0.890574
+Val Loss: 0.592714
+Val Accuracy: 0.714470
+Val Precision: 0.222586
+Val Recall: 0.815011
+Val F1-Score: 0.349674
+Val AUC-ROC: 0.833230
+----------------------------------------------------------------------------------------------------
+
+Epoch: 20
+Time: 8.67s
+Learning Rate: 0.003000
+Train Loss: 0.568053
+Train Accuracy: 0.810126
+Train Precision: 0.778735
+Train Recall: 0.866435
+Train F1-Score: 0.820247
+Train AUC-ROC: 0.891435
+Val Loss: 0.572400
+Val Accuracy: 0.722669
+Val Precision: 0.226384
+Val Recall: 0.804408
+Val F1-Score: 0.353330
+Val AUC-ROC: 0.828870
+----------------------------------------------------------------------------------------------------
+
+Epoch: 21
+Time: 10.36s
+Learning Rate: 0.003000
+Train Loss: 0.567268
+Train Accuracy: 0.811963
+Train Precision: 0.780663
+Train Recall: 0.867722
+Train F1-Score: 0.821894
+Train AUC-ROC: 0.891814
+Val Loss: 0.606718
+Val Accuracy: 0.704010
+Val Precision: 0.217580
+Val Recall: 0.825335
+Val F1-Score: 0.344374
+Val AUC-ROC: 0.831476
+----------------------------------------------------------------------------------------------------
+
+Epoch: 22
+Time: 9.19s
+Learning Rate: 0.003000
+Train Loss: 0.565519
+Train Accuracy: 0.812519
+Train Precision: 0.780770
+Train Recall: 0.869059
+Train F1-Score: 0.822552
+Train AUC-ROC: 0.892573
+Val Loss: 0.622695
+Val Accuracy: 0.702907
+Val Precision: 0.216286
+Val Recall: 0.821150
+Val F1-Score: 0.342388
+Val AUC-ROC: 0.831409
+----------------------------------------------------------------------------------------------------
+
+Epoch: 23
+Time: 8.64s
+Learning Rate: 0.003000
+Train Loss: 0.564597
+Train Accuracy: 0.811450
+Train Precision: 0.779369
+Train Recall: 0.868866
+Train F1-Score: 0.821688
+Train AUC-ROC: 0.892622
+Val Loss: 0.613152
+Val Accuracy: 0.700357
+Val Precision: 0.215916
+Val Recall: 0.828962
+Val F1-Score: 0.342597
+Val AUC-ROC: 0.831473
+----------------------------------------------------------------------------------------------------
+
+Epoch: 24
+Time: 8.80s
+Learning Rate: 0.003000
+Train Loss: 0.562948
+Train Accuracy: 0.812864
+Train Precision: 0.782257
+Train Recall: 0.867082
+Train F1-Score: 0.822488
+Train AUC-ROC: 0.893562
+Val Loss: 0.623565
+Val Accuracy: 0.700594
+Val Precision: 0.215436
+Val Recall: 0.824777
+Val F1-Score: 0.341635
+Val AUC-ROC: 0.829528
+----------------------------------------------------------------------------------------------------
+
+Epoch: 25
+Time: 8.53s
+Learning Rate: 0.003000
+Train Loss: 0.561732
+Train Accuracy: 0.813268
+Train Precision: 0.782242
+Train Recall: 0.868232
+Train F1-Score: 0.822997
+Train AUC-ROC: 0.894054
+Val Loss: 0.601238
+Val Accuracy: 0.697099
+Val Precision: 0.213905
+Val Recall: 0.828404
+Val F1-Score: 0.340014
+Val AUC-ROC: 0.830483
+----------------------------------------------------------------------------------------------------
+
+Epoch: 26
+Time: 7.72s
+Learning Rate: 0.002040
+Train Loss: 0.562261
+Train Accuracy: 0.813368
+Train Precision: 0.782816
+Train Recall: 0.867380
+Train F1-Score: 0.822932
+Train AUC-ROC: 0.893898
+Val Loss: 0.605317
+Val Accuracy: 0.714549
+Val Precision: 0.222426
+Val Recall: 0.813616
+Val F1-Score: 0.349347
+Val AUC-ROC: 0.831704
+----------------------------------------------------------------------------------------------------
+
+Epoch: 27
+Time: 7.98s
+Learning Rate: 0.002040
+Train Loss: 0.556819
+Train Accuracy: 0.814471
+Train Precision: 0.783801
+Train Recall: 0.868506
+Train F1-Score: 0.823982
+Train AUC-ROC: 0.896085
+Val Loss: 0.606723
+Val Accuracy: 0.699306
+Val Precision: 0.215001
+Val Recall: 0.827009
+Val F1-Score: 0.341278
+Val AUC-ROC: 0.830575
+----------------------------------------------------------------------------------------------------
+
+Epoch: 28
+Time: 3.92s
+Learning Rate: 0.002040
+Train Loss: 0.554664
+Train Accuracy: 0.815363
+Train Precision: 0.784451
+Train Recall: 0.869699
+Train F1-Score: 0.824879
+Train AUC-ROC: 0.896545
+Val Loss: 0.575352
+Val Accuracy: 0.717439
+Val Precision: 0.222300
+Val Recall: 0.800502
+Val F1-Score: 0.347968
+Val AUC-ROC: 0.826750
+----------------------------------------------------------------------------------------------------
+
+Epoch: 29
+Time: 3.84s
+Learning Rate: 0.002040
+Train Loss: 0.553527
+Train Accuracy: 0.816162
+Train Precision: 0.785049
+Train Recall: 0.870738
+Train F1-Score: 0.825676
+Train AUC-ROC: 0.897339
+Val Loss: 0.592972
+Val Accuracy: 0.714654
+Val Precision: 0.221772
+Val Recall: 0.808873
+Val F1-Score: 0.348103
+Val AUC-ROC: 0.831459
+----------------------------------------------------------------------------------------------------
+
+Epoch: 30
+Time: 3.66s
+Learning Rate: 0.002040
+Train Loss: 0.554510
+Train Accuracy: 0.815192
+Train Precision: 0.784506
+Train Recall: 0.869121
+Train F1-Score: 0.824649
+Train AUC-ROC: 0.896850
+Val Loss: 0.596133
+Val Accuracy: 0.708504
+Val Precision: 0.218591
+Val Recall: 0.813616
+Val F1-Score: 0.344599
+Val AUC-ROC: 0.829769
+----------------------------------------------------------------------------------------------------
+
+Epoch: 31
+Time: 3.77s
+Learning Rate: 0.002040
+Train Loss: 0.552294
+Train Accuracy: 0.816706
+Train Precision: 0.787303
+Train Recall: 0.867878
+Train F1-Score: 0.825629
+Train AUC-ROC: 0.897813
+Val Loss: 0.584058
+Val Accuracy: 0.720435
+Val Precision: 0.224151
+Val Recall: 0.799665
+Val F1-Score: 0.350153
+Val AUC-ROC: 0.827423
+----------------------------------------------------------------------------------------------------
+
+Epoch: 32
+Time: 3.40s
+Learning Rate: 0.001387
+Train Loss: 0.550592
+Train Accuracy: 0.816970
+Train Precision: 0.787087
+Train Recall: 0.869015
+Train F1-Score: 0.826025
+Train AUC-ROC: 0.898605
+Val Loss: 0.597505
+Val Accuracy: 0.694234
+Val Precision: 0.212854
+Val Recall: 0.832589
+Val F1-Score: 0.339033
+Val AUC-ROC: 0.831016
+----------------------------------------------------------------------------------------------------
+
+Epoch: 33
+Time: 3.37s
+Learning Rate: 0.001387
+Train Loss: 0.548999
+Train Accuracy: 0.817754
+Train Precision: 0.788759
+Train Recall: 0.867959
+Train F1-Score: 0.826466
+Train AUC-ROC: 0.899180
+Val Loss: 0.588051
+Val Accuracy: 0.715074
+Val Precision: 0.221446
+Val Recall: 0.804967
+Val F1-Score: 0.347339
+Val AUC-ROC: 0.827003
+----------------------------------------------------------------------------------------------------
+
+Epoch: 34
+Time: 3.34s
+Learning Rate: 0.001387
+Train Loss: 0.548884
+Train Accuracy: 0.817912
+Train Precision: 0.787198
+Train Recall: 0.871384
+Train F1-Score: 0.827155
+Train AUC-ROC: 0.899243
+Val Loss: 0.586673
+Val Accuracy: 0.705245
+Val Precision: 0.217543
+Val Recall: 0.820033
+Val F1-Score: 0.343863
+Val AUC-ROC: 0.829068
+----------------------------------------------------------------------------------------------------
+
+Epoch: 35
+Time: 3.43s
+Learning Rate: 0.001387
+Train Loss: 0.546093
+Train Accuracy: 0.819034
+Train Precision: 0.788551
+Train Recall: 0.871857
+Train F1-Score: 0.828114
+Train AUC-ROC: 0.900188
+Val Loss: 0.581921
+Val Accuracy: 0.715206
+Val Precision: 0.221060
+Val Recall: 0.801897
+Val F1-Score: 0.346578
+Val AUC-ROC: 0.829668
+----------------------------------------------------------------------------------------------------
+
+Epoch: 36
+Time: 3.44s
+Learning Rate: 0.001387
+Train Loss: 0.546803
+Train Accuracy: 0.818758
+Train Precision: 0.788770
+Train Recall: 0.870682
+Train F1-Score: 0.827704
+Train AUC-ROC: 0.900030
+Val Loss: 0.586247
+Val Accuracy: 0.716651
+Val Precision: 0.221956
+Val Recall: 0.801618
+Val F1-Score: 0.347652
+Val AUC-ROC: 0.827903
+----------------------------------------------------------------------------------------------------
+
+Epoch: 37
+Time: 3.67s
+Learning Rate: 0.001387
+Train Loss: 0.546630
+Train Accuracy: 0.818587
+Train Precision: 0.788230
+Train Recall: 0.871247
+Train F1-Score: 0.827662
+Train AUC-ROC: 0.900111
+Val Loss: 0.588981
+Val Accuracy: 0.721986
+Val Precision: 0.224324
+Val Recall: 0.794085
+Val F1-Score: 0.349825
+Val AUC-ROC: 0.826667
+----------------------------------------------------------------------------------------------------
+
+Epoch: 38
+Time: 5.06s
+Learning Rate: 0.000943
+Train Loss: 0.544900
+Train Accuracy: 0.819442
+Train Precision: 0.789432
+Train Recall: 0.871285
+Train F1-Score: 0.828341
+Train AUC-ROC: 0.900974
+Val Loss: 0.582527
+Val Accuracy: 0.711369
+Val Precision: 0.219629
+Val Recall: 0.808594
+Val F1-Score: 0.345432
+Val AUC-ROC: 0.828152
+----------------------------------------------------------------------------------------------------
+
+Epoch: 39
+Time: 5.53s
+Learning Rate: 0.000943
+Train Loss: 0.544105
+Train Accuracy: 0.820060
+Train Precision: 0.790409
+Train Recall: 0.871111
+Train F1-Score: 0.828800
+Train AUC-ROC: 0.901261
+Val Loss: 0.569998
+Val Accuracy: 0.732287
+Val Precision: 0.229008
+Val Recall: 0.778460
+Val F1-Score: 0.353904
+Val AUC-ROC: 0.825863
+----------------------------------------------------------------------------------------------------
+
+Epoch: 40
+Time: 4.19s
+Learning Rate: 0.000943
+Train Loss: 0.542592
+Train Accuracy: 0.819833
+Train Precision: 0.788911
+Train Recall: 0.873349
+Train F1-Score: 0.828985
+Train AUC-ROC: 0.901607
+Val Loss: 0.589438
+Val Accuracy: 0.715179
+Val Precision: 0.220828
+Val Recall: 0.800502
+Val F1-Score: 0.346163
+Val AUC-ROC: 0.826688
+----------------------------------------------------------------------------------------------------
+
+Epoch: 41
+Time: 3.38s
+Learning Rate: 0.000943
+Train Loss: 0.542247
+Train Accuracy: 0.819585
+Train Precision: 0.790300
+Train Recall: 0.870023
+Train F1-Score: 0.828247
+Train AUC-ROC: 0.901960
+Val Loss: 0.567026
+Val Accuracy: 0.731919
+Val Precision: 0.228433
+Val Recall: 0.776507
+Val F1-Score: 0.353016
+Val AUC-ROC: 0.825674
+----------------------------------------------------------------------------------------------------
+
+Epoch: 42
+Time: 3.80s
+Learning Rate: 0.000943
+Train Loss: 0.542307
+Train Accuracy: 0.820309
+Train Precision: 0.790275
+Train Recall: 0.872043
+Train F1-Score: 0.829148
+Train AUC-ROC: 0.901710
+Val Loss: 0.582848
+Val Accuracy: 0.717571
+Val Precision: 0.221176
+Val Recall: 0.792690
+Val F1-Score: 0.345852
+Val AUC-ROC: 0.826236
+----------------------------------------------------------------------------------------------------
+
+Epoch: 43
+Time: 3.40s
+Learning Rate: 0.000943
+Train Loss: 0.541658
+Train Accuracy: 0.820586
+Train Precision: 0.790272
+Train Recall: 0.872802
+Train F1-Score: 0.829489
+Train AUC-ROC: 0.901986
+Val Loss: 0.587119
+Val Accuracy: 0.713340
+Val Precision: 0.218999
+Val Recall: 0.796317
+Val F1-Score: 0.343524
+Val AUC-ROC: 0.825223
+----------------------------------------------------------------------------------------------------
+
+Epoch: 44
+Time: 3.42s
+Learning Rate: 0.000943
+Train Loss: 0.542267
+Train Accuracy: 0.820467
+Train Precision: 0.790194
+Train Recall: 0.872627
+Train F1-Score: 0.829368
+Train AUC-ROC: 0.901887
+Val Loss: 0.578799
+Val Accuracy: 0.720383
+Val Precision: 0.222946
+Val Recall: 0.792132
+Val F1-Score: 0.347959
+Val AUC-ROC: 0.825994
+----------------------------------------------------------------------------------------------------
+
+Epoch: 45
+Time: 3.83s
+Learning Rate: 0.000943
+Train Loss: 0.539892
+Train Accuracy: 0.820268
+Train Precision: 0.790751
+Train Recall: 0.871030
+Train F1-Score: 0.828951
+Train AUC-ROC: 0.902510
+Val Loss: 0.577834
+Val Accuracy: 0.709214
+Val Precision: 0.218230
+Val Recall: 0.808315
+Val F1-Score: 0.343674
+Val AUC-ROC: 0.827884
+----------------------------------------------------------------------------------------------------
+
+Epoch: 46
+Time: 3.29s
+Learning Rate: 0.000943
+Train Loss: 0.541507
+Train Accuracy: 0.820918
+Train Precision: 0.791293
+Train Recall: 0.871770
+Train F1-Score: 0.829584
+Train AUC-ROC: 0.902190
+Val Loss: 0.592201
+Val Accuracy: 0.713497
+Val Precision: 0.220474
+Val Recall: 0.805246
+Val F1-Score: 0.346168
+Val AUC-ROC: 0.826136
+----------------------------------------------------------------------------------------------------
+
+Epoch: 47
+Time: 3.55s
+Learning Rate: 0.000641
+Train Loss: 0.540874
+Train Accuracy: 0.820999
+Train Precision: 0.790769
+Train Recall: 0.872982
+Train F1-Score: 0.829844
+Train AUC-ROC: 0.902204
+Val Loss: 0.589533
+Val Accuracy: 0.716283
+Val Precision: 0.221630
+Val Recall: 0.801060
+Val F1-Score: 0.347200
+Val AUC-ROC: 0.827430
+----------------------------------------------------------------------------------------------------
+
+Epoch: 48
+Time: 3.31s
+Learning Rate: 0.000641
+Train Loss: 0.539778
+Train Accuracy: 0.821279
+Train Precision: 0.792657
+Train Recall: 0.870178
+Train F1-Score: 0.829611
+Train AUC-ROC: 0.902758
+Val Loss: 0.574725
+Val Accuracy: 0.712578
+Val Precision: 0.219971
+Val Recall: 0.805804
+Val F1-Score: 0.345599
+Val AUC-ROC: 0.828174
+----------------------------------------------------------------------------------------------------
+
+Epoch: 49
+Time: 3.59s
+Learning Rate: 0.000641
+Train Loss: 0.538020
+Train Accuracy: 0.821776
+Train Precision: 0.792002
+Train Recall: 0.872758
+Train F1-Score: 0.830421
+Train AUC-ROC: 0.903345
+Val Loss: 0.563246
+Val Accuracy: 0.735494
+Val Precision: 0.229349
+Val Recall: 0.766183
+Val F1-Score: 0.353024
+Val AUC-ROC: 0.825547
+----------------------------------------------------------------------------------------------------
+
+Epoch: 50
+Time: 3.42s
+Learning Rate: 0.000641
+Train Loss: 0.537295
+Train Accuracy: 0.822171
+Train Precision: 0.791763
+Train Recall: 0.874281
+Train F1-Score: 0.830979
+Train AUC-ROC: 0.903866
+Val Loss: 0.561715
+Val Accuracy: 0.731604
+Val Precision: 0.228297
+Val Recall: 0.777065
+Val F1-Score: 0.352911
+Val AUC-ROC: 0.825874
+----------------------------------------------------------------------------------------------------
+
+Epoch: 51
+Time: 3.59s
+Learning Rate: 0.000641
+Train Loss: 0.539941
+Train Accuracy: 0.821325
+Train Precision: 0.792725
+Train Recall: 0.870178
+Train F1-Score: 0.829647
+Train AUC-ROC: 0.902904
+Val Loss: 0.574788
+Val Accuracy: 0.718832
+Val Precision: 0.222482
+Val Recall: 0.795759
+Val F1-Score: 0.347741
+Val AUC-ROC: 0.826908
+----------------------------------------------------------------------------------------------------
+
+Epoch: 52
+Time: 3.57s
+Learning Rate: 0.000641
+Train Loss: 0.538551
+Train Accuracy: 0.821475
+Train Precision: 0.791997
+Train Recall: 0.871950
+Train F1-Score: 0.830053
+Train AUC-ROC: 0.903323
+Val Loss: 0.586145
+Val Accuracy: 0.709003
+Val Precision: 0.218734
+Val Recall: 0.812500
+Val F1-Score: 0.344677
+Val AUC-ROC: 0.826618
+----------------------------------------------------------------------------------------------------
+
+Epoch: 53
+Time: 3.73s
+Learning Rate: 0.000641
+Train Loss: 0.536301
+Train Accuracy: 0.821788
+Train Precision: 0.792353
+Train Recall: 0.872130
+Train F1-Score: 0.830330
+Train AUC-ROC: 0.903933
+Val Loss: 0.570377
+Val Accuracy: 0.718858
+Val Precision: 0.223793
+Val Recall: 0.804129
+Val F1-Score: 0.350140
+Val AUC-ROC: 0.826917
+----------------------------------------------------------------------------------------------------
+
+Epoch: 54
+Time: 3.62s
+Learning Rate: 0.000641
+Train Loss: 0.537577
+Train Accuracy: 0.821649
+Train Precision: 0.791793
+Train Recall: 0.872808
+Train F1-Score: 0.830329
+Train AUC-ROC: 0.903461
+Val Loss: 0.562715
+Val Accuracy: 0.725166
+Val Precision: 0.226615
+Val Recall: 0.794922
+Val F1-Score: 0.352686
+Val AUC-ROC: 0.827927
+----------------------------------------------------------------------------------------------------
+
+Epoch: 55
+Time: 3.31s
+Learning Rate: 0.000641
+Train Loss: 0.536433
+Train Accuracy: 0.822314
+Train Precision: 0.793376
+Train Recall: 0.871633
+Train F1-Score: 0.830665
+Train AUC-ROC: 0.903997
+Val Loss: 0.569486
+Val Accuracy: 0.722774
+Val Precision: 0.224638
+Val Recall: 0.792690
+Val F1-Score: 0.350071
+Val AUC-ROC: 0.828087
+----------------------------------------------------------------------------------------------------
+
+Epoch: 56
+Time: 3.54s
+Learning Rate: 0.000436
+Train Loss: 0.536397
+Train Accuracy: 0.822019
+Train Precision: 0.792071
+Train Recall: 0.873286
+Train F1-Score: 0.830698
+Train AUC-ROC: 0.903940
+Val Loss: 0.583309
+Val Accuracy: 0.713918
+Val Precision: 0.219067
+Val Recall: 0.794364
+Val F1-Score: 0.343426
+Val AUC-ROC: 0.822760
+----------------------------------------------------------------------------------------------------
+
+Epoch: 57
+Time: 3.56s
+Learning Rate: 0.000436
+Train Loss: 0.536373
+Train Accuracy: 0.822625
+Train Precision: 0.794452
+Train Recall: 0.870464
+Train F1-Score: 0.830723
+Train AUC-ROC: 0.903994
+Val Loss: 0.568264
+Val Accuracy: 0.725271
+Val Precision: 0.225902
+Val Recall: 0.789900
+Val F1-Score: 0.351328
+Val AUC-ROC: 0.826723
+----------------------------------------------------------------------------------------------------
+
+Epoch: 58
+Time: 3.60s
+Learning Rate: 0.000436
+Train Loss: 0.534849
+Train Accuracy: 0.822332
+Train Precision: 0.792301
+Train Recall: 0.873703
+Train F1-Score: 0.831013
+Train AUC-ROC: 0.904356
+Val Loss: 0.568075
+Val Accuracy: 0.727242
+Val Precision: 0.226383
+Val Recall: 0.784319
+Val F1-Score: 0.351353
+Val AUC-ROC: 0.825339
+----------------------------------------------------------------------------------------------------
+
+Epoch: 59
+Time: 3.66s
+Learning Rate: 0.000436
+Train Loss: 0.534666
+Train Accuracy: 0.823228
+Train Precision: 0.793935
+Train Recall: 0.873056
+Train F1-Score: 0.831618
+Train AUC-ROC: 0.904782
+Val Loss: 0.581504
+Val Accuracy: 0.713970
+Val Precision: 0.219705
+Val Recall: 0.798270
+Val F1-Score: 0.344574
+Val AUC-ROC: 0.823480
+----------------------------------------------------------------------------------------------------
+
+Epoch: 60
+Time: 3.74s
+Learning Rate: 0.000436
+Train Loss: 0.534496
+Train Accuracy: 0.822385
+Train Precision: 0.792747
+Train Recall: 0.873007
+Train F1-Score: 0.830943
+Train AUC-ROC: 0.905098
+Val Loss: 0.576199
+Val Accuracy: 0.713208
+Val Precision: 0.220417
+Val Recall: 0.806083
+Val F1-Score: 0.346175
+Val AUC-ROC: 0.825284
+----------------------------------------------------------------------------------------------------
+
+Epoch: 61
+Time: 3.99s
+Learning Rate: 0.000436
+Train Loss: 0.534063
+Train Accuracy: 0.822606
+Train Precision: 0.792946
+Train Recall: 0.873231
+Train F1-Score: 0.831154
+Train AUC-ROC: 0.904777
+Val Loss: 0.576124
+Val Accuracy: 0.714259
+Val Precision: 0.221134
+Val Recall: 0.806362
+Val F1-Score: 0.347085
+Val AUC-ROC: 0.826580
+----------------------------------------------------------------------------------------------------
+
+Epoch: 62
+Time: 3.67s
+Learning Rate: 0.000297
+Train Loss: 0.534777
+Train Accuracy: 0.822581
+Train Precision: 0.792131
+Train Recall: 0.874698
+Train F1-Score: 0.831370
+Train AUC-ROC: 0.904756
+Val Loss: 0.566372
+Val Accuracy: 0.731131
+Val Precision: 0.228494
+Val Recall: 0.780413
+Val F1-Score: 0.353491
+Val AUC-ROC: 0.826555
+----------------------------------------------------------------------------------------------------
+
+Epoch: 63
+Time: 3.28s
+Learning Rate: 0.000297
+Train Loss: 0.535559
+Train Accuracy: 0.822538
+Train Precision: 0.792010
+Train Recall: 0.874810
+Train F1-Score: 0.831353
+Train AUC-ROC: 0.904195
+Val Loss: 0.571512
+Val Accuracy: 0.719463
+Val Precision: 0.223375
+Val Recall: 0.798828
+Val F1-Score: 0.349125
+Val AUC-ROC: 0.826772
+----------------------------------------------------------------------------------------------------
+
+Epoch: 64
+Time: 3.64s
+Learning Rate: 0.000297
+Train Loss: 0.534511
+Train Accuracy: 0.823147
+Train Precision: 0.793802
+Train Recall: 0.873088
+Train F1-Score: 0.831559
+Train AUC-ROC: 0.904838
+Val Loss: 0.573731
+Val Accuracy: 0.720777
+Val Precision: 0.222904
+Val Recall: 0.790179
+Val F1-Score: 0.347719
+Val AUC-ROC: 0.824677
+----------------------------------------------------------------------------------------------------
+
+Epoch: 65
+Time: 3.69s
+Learning Rate: 0.000297
+Train Loss: 0.533963
+Train Accuracy: 0.822771
+Train Precision: 0.792776
+Train Recall: 0.873995
+Train F1-Score: 0.831407
+Train AUC-ROC: 0.904978
+Val Loss: 0.572523
+Val Accuracy: 0.722722
+Val Precision: 0.224123
+Val Recall: 0.789621
+Val F1-Score: 0.349146
+Val AUC-ROC: 0.825480
+----------------------------------------------------------------------------------------------------
+
+Epoch: 66
+Time: 3.58s
+Learning Rate: 0.000297
+Train Loss: 0.533315
+Train Accuracy: 0.823560
+Train Precision: 0.793595
+Train Recall: 0.874592
+Train F1-Score: 0.832127
+Train AUC-ROC: 0.905371
+Val Loss: 0.565437
+Val Accuracy: 0.728976
+Val Precision: 0.227284
+Val Recall: 0.782366
+Val F1-Score: 0.352239
+Val AUC-ROC: 0.825836
+----------------------------------------------------------------------------------------------------
+
+Epoch: 67
+Time: 3.59s
+Learning Rate: 0.000297
+Train Loss: 0.532158
+Train Accuracy: 0.823737
+Train Precision: 0.793840
+Train Recall: 0.874611
+Train F1-Score: 0.832270
+Train AUC-ROC: 0.905801
+Val Loss: 0.567534
+Val Accuracy: 0.725376
+Val Precision: 0.225974
+Val Recall: 0.789900
+Val F1-Score: 0.351415
+Val AUC-ROC: 0.825836
+----------------------------------------------------------------------------------------------------
+
+Epoch: 68
+Time: 3.66s
+Learning Rate: 0.000202
+Train Loss: 0.532495
+Train Accuracy: 0.823862
+Train Precision: 0.794245
+Train Recall: 0.874188
+Train F1-Score: 0.832301
+Train AUC-ROC: 0.905584
+Val Loss: 0.562586
+Val Accuracy: 0.731079
+Val Precision: 0.227745
+Val Recall: 0.775949
+Val F1-Score: 0.352137
+Val AUC-ROC: 0.825883
+----------------------------------------------------------------------------------------------------
+
+Epoch: 69
+Time: 3.66s
+Learning Rate: 0.000202
+Train Loss: 0.531220
+Train Accuracy: 0.824135
+Train Precision: 0.794115
+Train Recall: 0.875170
+Train F1-Score: 0.832675
+Train AUC-ROC: 0.905727
+Val Loss: 0.570718
+Val Accuracy: 0.723300
+Val Precision: 0.224120
+Val Recall: 0.787109
+Val F1-Score: 0.348896
+Val AUC-ROC: 0.824268
+----------------------------------------------------------------------------------------------------
+
+Epoch: 70
+Time: 4.12s
+Learning Rate: 0.000202
+Train Loss: 0.532615
+Train Accuracy: 0.822973
+Train Precision: 0.792552
+Train Recall: 0.874965
+Train F1-Score: 0.831722
+Train AUC-ROC: 0.905457
+Val Loss: 0.566947
+Val Accuracy: 0.725954
+Val Precision: 0.225625
+Val Recall: 0.785156
+Val F1-Score: 0.350523
+Val AUC-ROC: 0.825821
+----------------------------------------------------------------------------------------------------
+
+Epoch: 71
+Time: 3.56s
+Learning Rate: 0.000202
+Train Loss: 0.532728
+Train Accuracy: 0.823147
+Train Precision: 0.793410
+Train Recall: 0.873821
+Train F1-Score: 0.831677
+Train AUC-ROC: 0.905448
+Val Loss: 0.570035
+Val Accuracy: 0.723484
+Val Precision: 0.224289
+Val Recall: 0.787388
+Val F1-Score: 0.349128
+Val AUC-ROC: 0.825457
+----------------------------------------------------------------------------------------------------
+
+Epoch: 72
+Time: 3.61s
+Learning Rate: 0.000202
+Train Loss: 0.532702
+Train Accuracy: 0.823548
+Train Precision: 0.793574
+Train Recall: 0.874598
+Train F1-Score: 0.832118
+Train AUC-ROC: 0.905455
+Val Loss: 0.562401
+Val Accuracy: 0.728871
+Val Precision: 0.226767
+Val Recall: 0.779576
+Val F1-Score: 0.351336
+Val AUC-ROC: 0.823903
+----------------------------------------------------------------------------------------------------
+
+Epoch: 73
+Time: 3.63s
+Learning Rate: 0.000202
+Train Loss: 0.531404
+Train Accuracy: 0.823995
+Train Precision: 0.794023
+Train Recall: 0.874965
+Train F1-Score: 0.832531
+Train AUC-ROC: 0.905888
+Val Loss: 0.563908
+Val Accuracy: 0.724561
+Val Precision: 0.225503
+Val Recall: 0.790458
+Val F1-Score: 0.350901
+Val AUC-ROC: 0.826340
+----------------------------------------------------------------------------------------------------
+
+Epoch: 74
+Time: 4.00s
+Learning Rate: 0.000137
+Train Loss: 0.531582
+Train Accuracy: 0.824300
+Train Precision: 0.794333
+Train Recall: 0.875207
+Train F1-Score: 0.832811
+Train AUC-ROC: 0.905942
+Val Loss: 0.575525
+Val Accuracy: 0.716835
+Val Precision: 0.221861
+Val Recall: 0.800223
+Val F1-Score: 0.347405
+Val AUC-ROC: 0.826105
+----------------------------------------------------------------------------------------------------
+
+Epoch: 75
+Time: 3.60s
+Learning Rate: 0.000137
+Train Loss: 0.531263
+Train Accuracy: 0.824254
+Train Precision: 0.794558
+Train Recall: 0.874660
+Train F1-Score: 0.832687
+Train AUC-ROC: 0.906250
+Val Loss: 0.565431
+Val Accuracy: 0.724824
+Val Precision: 0.225508
+Val Recall: 0.789342
+Val F1-Score: 0.350797
+Val AUC-ROC: 0.825208
+----------------------------------------------------------------------------------------------------
+
+Epoch: 76
+Time: 3.70s
+Learning Rate: 0.000137
+Train Loss: 0.532034
+Train Accuracy: 0.823912
+Train Precision: 0.793799
+Train Recall: 0.875158
+Train F1-Score: 0.832496
+Train AUC-ROC: 0.905797
+Val Loss: 0.573174
+Val Accuracy: 0.723273
+Val Precision: 0.224146
+Val Recall: 0.787388
+Val F1-Score: 0.348955
+Val AUC-ROC: 0.825051
+----------------------------------------------------------------------------------------------------
+
+Epoch: 77
+Time: 3.76s
+Learning Rate: 0.000137
+Train Loss: 0.530693
+Train Accuracy: 0.824773
+Train Precision: 0.794639
+Train Recall: 0.875910
+Train F1-Score: 0.833297
+Train AUC-ROC: 0.906196
+Val Loss: 0.567451
+Val Accuracy: 0.724850
+Val Precision: 0.225132
+Val Recall: 0.786830
+Val F1-Score: 0.350093
+Val AUC-ROC: 0.823911
+----------------------------------------------------------------------------------------------------
+
+Epoch: 78
+Time: 3.59s
+Learning Rate: 0.000137
+Train Loss: 0.530577
+Train Accuracy: 0.824477
+Train Precision: 0.794485
+Train Recall: 0.875400
+Train F1-Score: 0.832982
+Train AUC-ROC: 0.906178
+Val Loss: 0.566486
+Val Accuracy: 0.725376
+Val Precision: 0.225096
+Val Recall: 0.784319
+Val F1-Score: 0.349801
+Val AUC-ROC: 0.824930
+----------------------------------------------------------------------------------------------------
+
+Epoch: 79
+Time: 3.32s
+Learning Rate: 0.000137
+Train Loss: 0.529946
+Train Accuracy: 0.823697
+Train Precision: 0.793339
+Train Recall: 0.875444
+Train F1-Score: 0.832371
+Train AUC-ROC: 0.906378
+Val Loss: 0.567483
+Val Accuracy: 0.723641
+Val Precision: 0.224220
+Val Recall: 0.786272
+Val F1-Score: 0.348935
+Val AUC-ROC: 0.824303
+----------------------------------------------------------------------------------------------------
+
+Epoch: 80
+Time: 3.61s
+Learning Rate: 0.000093
+Train Loss: 0.531093
+Train Accuracy: 0.824129
+Train Precision: 0.794535
+Train Recall: 0.874368
+Train F1-Score: 0.832542
+Train AUC-ROC: 0.906232
+Val Loss: 0.569775
+Val Accuracy: 0.720672
+Val Precision: 0.223139
+Val Recall: 0.792132
+Val F1-Score: 0.348194
+Val AUC-ROC: 0.825762
+----------------------------------------------------------------------------------------------------
+
+Epoch: 81
+Time: 3.66s
+Learning Rate: 0.000093
+Train Loss: 0.530773
+Train Accuracy: 0.824285
+Train Precision: 0.794274
+Train Recall: 0.875276
+Train F1-Score: 0.832810
+Train AUC-ROC: 0.906072
+Val Loss: 0.564390
+Val Accuracy: 0.727557
+Val Precision: 0.225629
+Val Recall: 0.778181
+Val F1-Score: 0.349828
+Val AUC-ROC: 0.824030
+----------------------------------------------------------------------------------------------------
+
+Epoch: 82
+Time: 3.95s
+Learning Rate: 0.000093
+Train Loss: 0.530827
+Train Accuracy: 0.824285
+Train Precision: 0.794447
+Train Recall: 0.874953
+Train F1-Score: 0.832758
+Train AUC-ROC: 0.906275
+Val Loss: 0.558507
+Val Accuracy: 0.732682
+Val Precision: 0.228800
+Val Recall: 0.775391
+Val F1-Score: 0.353338
+Val AUC-ROC: 0.825521
+----------------------------------------------------------------------------------------------------
+
+Epoch: 83
+Time: 3.61s
+Learning Rate: 0.000093
+Train Loss: 0.531237
+Train Accuracy: 0.824658
+Train Precision: 0.794559
+Train Recall: 0.875748
+Train F1-Score: 0.833181
+Train AUC-ROC: 0.906165
+Val Loss: 0.564093
+Val Accuracy: 0.729554
+Val Precision: 0.227158
+Val Recall: 0.779018
+Val F1-Score: 0.351748
+Val AUC-ROC: 0.824761
+----------------------------------------------------------------------------------------------------
+
+Epoch: 84
+Time: 3.56s
+Learning Rate: 0.000093
+Train Loss: 0.529884
+Train Accuracy: 0.824449
+Train Precision: 0.794209
+Train Recall: 0.875842
+Train F1-Score: 0.833030
+Train AUC-ROC: 0.906604
+Val Loss: 0.570268
+Val Accuracy: 0.725008
+Val Precision: 0.224491
+Val Recall: 0.782087
+Val F1-Score: 0.348849
+Val AUC-ROC: 0.823655
+----------------------------------------------------------------------------------------------------
+
+Epoch: 85
+Time: 3.54s
+Learning Rate: 0.000093
+Train Loss: 0.530020
+Train Accuracy: 0.824232
+Train Precision: 0.794493
+Train Recall: 0.874723
+Train F1-Score: 0.832680
+Train AUC-ROC: 0.906596
+Val Loss: 0.554199
+Val Accuracy: 0.734048
+Val Precision: 0.229336
+Val Recall: 0.772600
+Val F1-Score: 0.353685
+Val AUC-ROC: 0.824839
+----------------------------------------------------------------------------------------------------
+
+Epoch: 86
+Time: 3.69s
+Learning Rate: 0.000093
+Train Loss: 0.529978
+Train Accuracy: 0.823940
+Train Precision: 0.793853
+Train Recall: 0.875133
+Train F1-Score: 0.832514
+Train AUC-ROC: 0.906664
+Val Loss: 0.559639
+Val Accuracy: 0.729843
+Val Precision: 0.226694
+Val Recall: 0.774833
+Val F1-Score: 0.350764
+Val AUC-ROC: 0.823638
+----------------------------------------------------------------------------------------------------
+
+Epoch: 87
+Time: 3.56s
+Learning Rate: 0.000093
+Train Loss: 0.531898
+Train Accuracy: 0.823781
+Train Precision: 0.794219
+Train Recall: 0.874020
+Train F1-Score: 0.832211
+Train AUC-ROC: 0.905753
+Val Loss: 0.565546
+Val Accuracy: 0.723562
+Val Precision: 0.224298
+Val Recall: 0.787109
+Val F1-Score: 0.349112
+Val AUC-ROC: 0.825402
+----------------------------------------------------------------------------------------------------
+
+Epoch: 88
+Time: 3.64s
+Learning Rate: 0.000093
+Train Loss: 0.529463
+Train Accuracy: 0.824294
+Train Precision: 0.793929
+Train Recall: 0.875947
+Train F1-Score: 0.832924
+Train AUC-ROC: 0.906568
+Val Loss: 0.574138
+Val Accuracy: 0.716730
+Val Precision: 0.221189
+Val Recall: 0.796317
+Val F1-Score: 0.346212
+Val AUC-ROC: 0.824805
+----------------------------------------------------------------------------------------------------
+
+Epoch: 89
+Time: 3.61s
+Learning Rate: 0.000093
+Train Loss: 0.529850
+Train Accuracy: 0.824888
+Train Precision: 0.794565
+Train Recall: 0.876358
+Train F1-Score: 0.833459
+Train AUC-ROC: 0.906237
+Val Loss: 0.573733
+Val Accuracy: 0.718622
+Val Precision: 0.222214
+Val Recall: 0.794922
+Val F1-Score: 0.347333
+Val AUC-ROC: 0.824346
+----------------------------------------------------------------------------------------------------
+
+Epoch: 90
+Time: 3.58s
+Learning Rate: 0.000093
+Train Loss: 0.530514
+Train Accuracy: 0.824403
+Train Precision: 0.795311
+Train Recall: 0.873659
+Train F1-Score: 0.832646
+Train AUC-ROC: 0.906222
+Val Loss: 0.565730
+Val Accuracy: 0.727741
+Val Precision: 0.226244
+Val Recall: 0.781250
+Val F1-Score: 0.350877
+Val AUC-ROC: 0.824920
+----------------------------------------------------------------------------------------------------
+
+Epoch: 91
+Time: 3.57s
+Learning Rate: 0.000063
+Train Loss: 0.529387
+Train Accuracy: 0.823663
+Train Precision: 0.794015
+Train Recall: 0.874082
+Train F1-Score: 0.832127
+Train AUC-ROC: 0.906459
+Val Loss: 0.562745
+Val Accuracy: 0.724824
+Val Precision: 0.224938
+Val Recall: 0.785714
+Val F1-Score: 0.349748
+Val AUC-ROC: 0.824457
+----------------------------------------------------------------------------------------------------
+
+Epoch: 92
+Time: 3.78s
+Learning Rate: 0.000063
+Train Loss: 0.530752
+Train Accuracy: 0.824107
+Train Precision: 0.793949
+Train Recall: 0.875406
+Train F1-Score: 0.832690
+Train AUC-ROC: 0.906316
+Val Loss: 0.569029
+Val Accuracy: 0.721697
+Val Precision: 0.223651
+Val Recall: 0.791016
+Val F1-Score: 0.348708
+Val AUC-ROC: 0.824608
+----------------------------------------------------------------------------------------------------
+
+Epoch: 93
+Time: 3.66s
+Learning Rate: 0.000063
+Train Loss: 0.528705
+Train Accuracy: 0.825093
+Train Precision: 0.794851
+Train Recall: 0.876376
+Train F1-Score: 0.833625
+Train AUC-ROC: 0.906817
+Val Loss: 0.574358
+Val Accuracy: 0.720856
+Val Precision: 0.223044
+Val Recall: 0.790737
+Val F1-Score: 0.347944
+Val AUC-ROC: 0.824723
+----------------------------------------------------------------------------------------------------
+
+Epoch: 94
+Time: 4.03s
+Learning Rate: 0.000063
+Train Loss: 0.528892
+Train Accuracy: 0.824154
+Train Precision: 0.794401
+Train Recall: 0.874685
+Train F1-Score: 0.832612
+Train AUC-ROC: 0.906881
+Val Loss: 0.565208
+Val Accuracy: 0.720383
+Val Precision: 0.222336
+Val Recall: 0.788225
+Val F1-Score: 0.346839
+Val AUC-ROC: 0.824007
+----------------------------------------------------------------------------------------------------
+
+Epoch: 95
+Time: 3.68s
+Learning Rate: 0.000063
+Train Loss: 0.531572
+Train Accuracy: 0.824244
+Train Precision: 0.794448
+Train Recall: 0.874841
+Train F1-Score: 0.832709
+Train AUC-ROC: 0.906231
+Val Loss: 0.572643
+Val Accuracy: 0.723116
+Val Precision: 0.224171
+Val Recall: 0.788225
+Val F1-Score: 0.349067
+Val AUC-ROC: 0.824110
+----------------------------------------------------------------------------------------------------
+
+Epoch: 96
+Time: 3.70s
+Learning Rate: 0.000063
+Train Loss: 0.528784
+Train Accuracy: 0.824614
+Train Precision: 0.795126
+Train Recall: 0.874573
+Train F1-Score: 0.832959
+Train AUC-ROC: 0.906893
+Val Loss: 0.554220
+Val Accuracy: 0.736387
+Val Precision: 0.229867
+Val Recall: 0.765346
+Val F1-Score: 0.353548
+Val AUC-ROC: 0.824370
+----------------------------------------------------------------------------------------------------
+
+Epoch: 97
+Time: 3.61s
+Learning Rate: 0.000043
+Train Loss: 0.530066
+Train Accuracy: 0.824714
+Train Precision: 0.795416
+Train Recall: 0.874300
+Train F1-Score: 0.832995
+Train AUC-ROC: 0.906690
+Val Loss: 0.562460
+Val Accuracy: 0.728188
+Val Precision: 0.226378
+Val Recall: 0.780134
+Val F1-Score: 0.350926
+Val AUC-ROC: 0.824662
+----------------------------------------------------------------------------------------------------
+
+Epoch: 98
+Time: 3.58s
+Learning Rate: 0.000043
+Train Loss: 0.529153
+Train Accuracy: 0.824555
+Train Precision: 0.794518
+Train Recall: 0.875549
+Train F1-Score: 0.833068
+Train AUC-ROC: 0.906779
+Val Loss: 0.572249
+Val Accuracy: 0.721408
+Val Precision: 0.222714
+Val Recall: 0.786272
+Val F1-Score: 0.347108
+Val AUC-ROC: 0.824241
+----------------------------------------------------------------------------------------------------
+
+Epoch: 99
+Time: 3.60s
+Learning Rate: 0.000043
+Train Loss: 0.529213
+Train Accuracy: 0.824651
+Train Precision: 0.795203
+Train Recall: 0.874530
+Train F1-Score: 0.832982
+Train AUC-ROC: 0.906934
+Val Loss: 0.567245
+Val Accuracy: 0.720094
+Val Precision: 0.222754
+Val Recall: 0.792132
+Val F1-Score: 0.347725
+Val AUC-ROC: 0.825401
+----------------------------------------------------------------------------------------------------
+
+Epoch: 100
+Time: 3.66s
+Learning Rate: 0.000043
+Train Loss: 0.529072
+Train Accuracy: 0.825220
+Train Precision: 0.795171
+Train Recall: 0.876121
+Train F1-Score: 0.833686
+Train AUC-ROC: 0.906800
+Val Loss: 0.565548
+Val Accuracy: 0.726611
+Val Precision: 0.225638
+Val Recall: 0.782366
+Val F1-Score: 0.350259
+Val AUC-ROC: 0.824838
+----------------------------------------------------------------------------------------------------
+
