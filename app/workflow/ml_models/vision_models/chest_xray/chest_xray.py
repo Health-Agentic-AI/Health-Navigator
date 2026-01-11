@@ -14,12 +14,13 @@ def classify_chest_xray(image_path):
     model.fc = nn.Linear(512, 14)  # final fully connected layer
 
     
-    model.load_state_dict(torch.load('models/model_epoch_66.pt'))
+    model.load_state_dict(torch.load(r'C:\My Projects\Health-Navigator\app\workflow\ml_models\vision_models\chest_xray\models\model_epoch_66.pt'))
 
     model = model.to(device) # move the model to the GPU
 
     # Define transforms
     transform = transforms.Compose([
+        transforms.Grayscale(num_output_channels=1),
         transforms.Resize((224, 224)),
         transforms.ToTensor(),
         transforms.Normalize((0.5,), (0.5,))
@@ -58,4 +59,4 @@ def classify_chest_xray(image_path):
     # Return all positive predictions
     results = {class_names[i]: probabilities[i].item() 
             for i, pred in enumerate(predicted_labels) if pred}
-    return results
+    return str(results)

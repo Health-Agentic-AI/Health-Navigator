@@ -72,7 +72,22 @@ def predict_heart_disease_tool(
             'prediction': int (0 or 1, where 1 indicates heart disease),
             'probability': float (rounded to 4 decimal places, risk probability)
         }
-    
+
+        Note: for the heart disease prediction, this is how the age is mapped: 
+        1 → 18–24
+        2 → 25–29
+        3 → 30–34
+        4 → 35–39
+        5 → 40–44
+        6 → 45–49
+        7 → 50–54
+        8 → 55–59
+        9 → 60–64
+        10 → 65–69
+        11 → 70–74
+        12 → 75–79
+        13 → 80+
+            
     Example:
         result = predict_heart_disease_tool(
             HighBP=1, HighChol=1, BMI=28.5, Smoker=0, Stroke=0, Diabetes=0,
@@ -165,11 +180,8 @@ llm = ChatGoogleGenerativeAI(
     google_api_key=os.environ["GOOGLE_API_KEY"],
 )
 
-# postgresql_uri = f'postgresql+psycopg2://{os.environ["POSTGRES_USERNAME"]}:{os.environ["POSTGRES_PASSWORD"]}@{os.environ["POSTGRES_HOST"]}:{os.environ["POSTGRES_PORT"]}/{os.environ["DATABASE_NAME"]}'
-# db = SQLDatabase.from_uri(postgresql_uri)
-
-mysql_uri = f'mysql+mysqlconnector://{os.environ["MYSQL_USERNAME"]}:{os.environ["MYSQL_PASSWORD"]}@{os.environ["MYSQL_HOST"]}:{os.environ["MYSQL_PORT"]}/{os.environ["DATABASE_NAME"]}'
-db = SQLDatabase.from_uri(mysql_uri)
+postgresql_uri = f'postgresql+psycopg2://{os.environ["POSTGRES_USERNAME"]}:{os.environ["POSTGRES_PASSWORD"]}@{os.environ["POSTGRES_HOST"]}:{os.environ["POSTGRES_PORT"]}/{os.environ["DATABASE_NAME"]}'
+db = SQLDatabase.from_uri(postgresql_uri)
 
 agent = None
 current_user_id = None
@@ -220,6 +232,7 @@ AVAILABLE TOOLS:
    - Always use user_id: "{user_id}"
    - Retrieve ONLY when you need historical data for ML model input
    - Documents may contain: prescriptions, lab reports, doctor notes, health records
+   - When querying, you should pass the query with the things you want to find, with the things you can pass to the ML model
 
 3. ML Model (predict_heart_disease_tool): Predict heart disease risk
    - Requires 19 specific features (HighBP, HighChol, BMI, Smoker, Stroke, Diabetes, PhysActivity, Fruits, Veggies, HvyAlcoholConsump, AnyHealthcare, GenHlth, MentHlth, PhysHlth, DiffWalk, Sex, Age, Education, Income)

@@ -1,3 +1,6 @@
+import sys
+sys.path.append(r"C:\My Projects\Health-Navigator")
+
 import numpy as np
 import torch
 import torch.nn as nn
@@ -13,7 +16,7 @@ def classify_colon(image_path):
         nn.Linear(512, 9)
     )    
     
-    model.load_state_dict(torch.load('training/models/model_epoch_13.pt'))
+    model.load_state_dict(torch.load(r'C:\My Projects\Health-Navigator\app\workflow\ml_models\vision_models\colon_tissue_classifier\training\models\model_epoch_13.pt'))
     model = model.to(device)
 
     transform = transforms.Compose([
