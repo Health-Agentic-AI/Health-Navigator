@@ -7,3 +7,6 @@ __pycache__/
 !model_epoch_13.pt
 
 gen-lang-client-0704427172-e146f940df9a.json
+notes.txt
+
+chroma_db/

@@ -32,13 +32,13 @@ class HeartDiseaseNN(nn.Module):
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 model = HeartDiseaseNN(input_size=19).to(device)
-checkpoint = torch.load('training/results/saved_models/model_epoch_85.pth', 
+checkpoint = torch.load(r'C:\My Projects\Health-Navigator\app\workflow\ml_models\numerical_models\heart_disease\training\results\saved_models\model_epoch_85.pth', 
                        map_location=device, weights_only=False)
 model.load_state_dict(checkpoint['model_state_dict'])
 model.eval()
 
 # Load scaler
-with open('training/results/saved_models/scaler.pkl', 'rb') as f:
+with open(r'C:\My Projects\Health-Navigator\app\workflow\ml_models\numerical_models\heart_disease\training\results\saved_models\scaler.pkl', 'rb') as f:
     scaler = pickle.load(f)
 
 # Features that need scaling

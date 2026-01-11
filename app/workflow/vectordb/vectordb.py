@@ -21,7 +21,7 @@ nest_asyncio.apply()
 
 
 class HybridVectorDB:
-    def __init__(self, user_id: str, db_path: str = "./chroma_db", google_api_key: str = None, model_name: str = "models/embedding-001"):
+    def __init__(self, user_id: str, db_path: str = r"C:\My Projects\Health-Navigator\app\workflow\vectordb\chroma_db", google_api_key: str = None, model_name: str = "models/embedding-001"):
         """Initialize connection to existing ChromaDB with Google embeddings."""
 
         self.all_nodes = []
@@ -143,8 +143,8 @@ class HybridVectorDB:
             print(f"Error adding text: {e}")
             return False
     
-    def retrieve(self, query: str, top_k: int = 40, initial_k: int = None, 
-             similarity_threshold = 0.3, filters: Dict = None,
+    def retrieve(self, query: str, top_k: int = 100, initial_k: int = None, 
+             similarity_threshold = 0.01, filters: Dict = None,
              date: str = None, date_filter: str = None):
         """
         Retrieve relevant texts using hybrid search (semantic + BM25).
