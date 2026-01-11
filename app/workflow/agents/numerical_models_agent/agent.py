@@ -277,4 +277,4 @@ def invoke_agent(user_input: str, user_id: str) -> str:
         ]
     })
     
-    return response['messages'][-1].content
+    return response['messages'][-1].content[0]['text']
