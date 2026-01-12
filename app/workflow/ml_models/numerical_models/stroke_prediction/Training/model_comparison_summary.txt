@@ -1,0 +1,123 @@
+============================================================
+MODEL COMPARISON SUMMARY
+============================================================
+
+Date: 2026-01-10 16:44:27
+Dataset Size: 35000 samples
+Train Size: 28000 | Test Size: 7000
+
+CLASSIFICATION RESULTS (8 Models):
+------------------------------------------------------------
+Neural Network:
+  Accuracy: 0.9829
+  F1 Score: 0.9772
+  ROC-AUC: 0.9999
+  CV AUC: 0.9999 (+/- 0.0000)
+
+XGBoost:
+  Accuracy: 0.9869
+  F1 Score: 0.9820
+  ROC-AUC: 0.9993
+  CV AUC: 0.9992 (+/- 0.0002)
+
+LightGBM:
+  Accuracy: 0.9814
+  F1 Score: 0.9746
+  ROC-AUC: 0.9986
+  CV AUC: 0.9984 (+/- 0.0004)
+
+Logistic Regression:
+  Accuracy: 0.9801
+  F1 Score: 0.9731
+  ROC-AUC: 0.9984
+  CV AUC: 0.9985 (+/- 0.0002)
+
+Random Forest:
+  Accuracy: 0.9734
+  F1 Score: 0.9632
+  ROC-AUC: 0.9981
+  CV AUC: 0.9976 (+/- 0.0002)
+
+SVM:
+  Accuracy: 0.9350
+  F1 Score: 0.9064
+  ROC-AUC: 0.9909
+  CV AUC: 0.9887 (+/- 0.0007)
+
+KNN:
+  Accuracy: 0.9074
+  F1 Score: 0.8580
+  ROC-AUC: 0.9680
+  CV AUC: 0.9609 (+/- 0.0020)
+
+Naive Bayes:
+  Accuracy: 0.8853
+  F1 Score: 0.8560
+  ROC-AUC: 0.9637
+  CV AUC: 0.9662 (+/- 0.0037)
+
+Decision Tree:
+  Accuracy: 0.9631
+  F1 Score: 0.9493
+  ROC-AUC: 0.9576
+  CV AUC: 0.9493 (+/- 0.0025)
+
+🏆 WINNER: Neural Network
+
+REGRESSION RESULTS (9 Models):
+------------------------------------------------------------
+ElasticNet:
+  RMSE: 29.7299
+  MAE: 24.8626
+  R² Score: -0.0004
+  CV R²: -0.0001 (+/- 0.0001)
+
+Lasso:
+  RMSE: 29.7303
+  MAE: 24.8631
+  R² Score: -0.0004
+  CV R²: -0.0001 (+/- 0.0001)
+
+Ridge:
+  RMSE: 29.7353
+  MAE: 24.8736
+  R² Score: -0.0007
+  CV R²: -0.0008 (+/- 0.0005)
+
+Linear Regression:
+  RMSE: 29.7353
+  MAE: 24.8736
+  R² Score: -0.0007
+  CV R²: -0.0008 (+/- 0.0005)
+
+Gradient Boosting:
+  RMSE: 29.7681
+  MAE: 24.8933
+  R² Score: -0.0029
+  CV R²: -0.0028 (+/- 0.0018)
+
+LightGBM:
+  RMSE: 29.8577
+  MAE: 24.9594
+  R² Score: -0.0090
+  CV R²: -0.0120 (+/- 0.0027)
+
+XGBoost:
+  RMSE: 30.3437
+  MAE: 25.2970
+  R² Score: -0.0421
+  CV R²: -0.0610 (+/- 0.0060)
+
+Random Forest:
+  RMSE: 32.2958
+  MAE: 26.7183
+  R² Score: -0.1805
+  CV R²: -0.1663 (+/- 0.0078)
+
+Decision Tree:
+  RMSE: 38.4286
+  MAE: 30.8654
+  R² Score: -0.6714
+  CV R²: -0.6743 (+/- 0.0211)
+
+🏆 WINNER: ElasticNet
