@@ -8,9 +8,9 @@ from langchain_community.agent_toolkits.sql.toolkit import SQLDatabaseToolkit
 from langchain_community.utilities.sql_database import SQLDatabase
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_google_genai import ChatGoogleGenerativeAI
-from dotenv import load_dotenv
 import time
 import os
+from dotenv import load_dotenv
 load_dotenv(r'C:\My Projects\Health-Navigator\credentials.env')
 
 from app.workflow.ml_models.numerical_models.heart_disease.heart_disease import predict_heart_disease
