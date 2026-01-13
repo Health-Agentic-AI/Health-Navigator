@@ -1,4 +1,4 @@
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     const chatForm = document.getElementById('chat-form');
     const messageInput = document.getElementById('message-input');
     const chatMessages = document.getElementById('chat-messages');
@@ -13,6 +13,48 @@ document.addEventListener('DOMContentLoaded', function() {
     const questionText = document.getElementById('question-text');
     const statusBadge = document.getElementById('status-badge');
 
+    // --- Markdown Parser ---
+    function parseMarkdown(text) {
+        let html = text;
+
+        // Escape HTML
+        html = html.replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
+
+        // Headers (## and ###)
+        html = html.replace(/^### (.+)$/gm, '<h3 class="mt-3 mb-2">$1</h3>');
+        html = html.replace(/^## (.+)$/gm, '<h2 class="mt-4 mb-3">$1</h2>');
+
+        // Bold (**text**)
+        html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+
+        // Horizontal rules (***)
+        html = html.replace(/^\*\*\*$/gm, '<hr class="my-3">');
+        html = html.replace(/^---$/gm, '<hr class="my-3">');
+
+        // Bullet lists (lines starting with * or -)
+        html = html.replace(/^\* (.+)$/gm, '<li>$1</li>');
+        html = html.replace(/^- (.+)$/gm, '<li>$1</li>');
+
+        // Wrap consecutive <li> in <ul>
+        html = html.replace(/(<li>.*<\/li>\n?)+/g, function (match) {
+            return '<ul class="mb-2">' + match + '</ul>';
+        });
+
+        // Paragraphs (double newlines)
+        html = html.replace(/\n\n+/g, '</p><p class="mb-2">');
+        html = '<p class="mb-2">' + html + '</p>';
+
+        // Single newlines to <br>
+        html = html.replace(/\n/g, '<br>');
+
+        // Clean up empty paragraphs
+        html = html.replace(/<p class="mb-2"><\/p>/g, '');
+
+        return html;
+    }
+
     // --- Event Listeners ---
 
     attachmentBtn.addEventListener('click', () => fileInput.click());
@@ -21,7 +63,7 @@ document.addEventListener('DOMContentLoaded', function() {
         filePreview.innerHTML = '';
         Array.from(fileInput.files).forEach(file => {
             const badge = document.createElement('span');
-            badge.className = 'badge bg-secondary';
+            badge.className = 'badge bg-secondary me-1';
             badge.textContent = file.name;
             filePreview.appendChild(badge);
         });
@@ -37,7 +79,6 @@ document.addEventListener('DOMContentLoaded', function() {
         statusBadge.textContent = 'Ready';
         statusBadge.className = 'badge bg-info text-dark';
 
-        // Remove active class from list
         document.querySelectorAll('.conversation-item').forEach(el => el.classList.remove('active'));
     });
 
@@ -47,7 +88,6 @@ document.addEventListener('DOMContentLoaded', function() {
             const id = item.dataset.id;
             loadConversation(id);
 
-            // Highlight active
             document.querySelectorAll('.conversation-item').forEach(el => el.classList.remove('active'));
             item.classList.add('active');
         });
@@ -61,22 +101,18 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (!message && files.length === 0) return;
 
-        // Optimistic UI update
         if (message) {
             appendMessage('user', message);
         }
 
-        // Prepare FormData
         const formData = new FormData(chatForm);
 
-        // Clear input
         messageInput.value = '';
-        fileInput.value = ''; // Reset file input
+        fileInput.value = '';
         filePreview.innerHTML = '';
 
         if (emptyState) emptyState.style.display = 'none';
 
-        // Show loading state
         statusBadge.textContent = 'Processing...';
         statusBadge.className = 'badge bg-warning text-dark';
         interruptionAlert.classList.add('d-none');
@@ -95,7 +131,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     statusBadge.textContent = 'Completed';
                     statusBadge.className = 'badge bg-success';
                 } else if (data.status === 'interrupted') {
-                    // Handle system question
                     appendMessage('system_question', data.question);
                     interruptionAlert.classList.remove('d-none');
                     questionText.textContent = data.question;
@@ -108,7 +143,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 if (data.conversation_id) {
                     currentConvIdInput.value = data.conversation_id;
-                    // TODO: Update or add to conversation list if new
                 }
             } else {
                 appendMessage('error', data.error || 'An error occurred.');
@@ -143,17 +177,16 @@ document.addEventListener('DOMContentLoaded', function() {
                     chatMessages.appendChild(emptyState);
                 }
 
-                // Check if last message was a system question (interrupted state)
                 const lastMsg = data.messages[data.messages.length - 1];
                 if (lastMsg && lastMsg.role === 'system_question') {
-                     interruptionAlert.classList.remove('d-none');
-                     questionText.textContent = lastMsg.content;
-                     statusBadge.textContent = 'Waiting for input';
-                     statusBadge.className = 'badge bg-danger';
+                    interruptionAlert.classList.remove('d-none');
+                    questionText.textContent = lastMsg.content;
+                    statusBadge.textContent = 'Waiting for input';
+                    statusBadge.className = 'badge bg-danger';
                 } else {
-                     interruptionAlert.classList.add('d-none');
-                     statusBadge.textContent = 'Ready';
-                     statusBadge.className = 'badge bg-info text-dark';
+                    interruptionAlert.classList.add('d-none');
+                    statusBadge.textContent = 'Ready';
+                    statusBadge.className = 'badge bg-info text-dark';
                 }
             }
         } catch (err) {
@@ -169,12 +202,14 @@ document.addEventListener('DOMContentLoaded', function() {
         if (role === 'system_question') cardClass = 'bg-warning text-dark';
         if (role === 'error') cardClass = 'bg-danger text-white';
 
-        // Markdown-like simple formatting (newlines)
-        const formattedContent = content.replace(/\n/g, '<br>');
+        // Apply markdown parsing for assistant messages
+        const formattedContent = (role === 'assistant')
+            ? parseMarkdown(content)
+            : content.replace(/\n/g, '<br>');
 
         msgDiv.innerHTML = `
             <div class="card ${cardClass}" style="max-width: 75%;">
-                <div class="card-body p-2">
+                <div class="card-body p-3">
                     ${formattedContent}
                 </div>
             </div>

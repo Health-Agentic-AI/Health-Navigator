@@ -8,6 +8,8 @@ import os
 import json
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
+from langgraph.errors import GraphInterrupt
+from datetime import datetime
 
 main_bp = Blueprint('main', __name__)
 
@@ -138,10 +140,9 @@ def send_message():
                 filename = secure_filename(file.filename)
                 file_path = os.path.join(upload_folder, filename)
                 file.save(file_path)
-                # Store absolute path for workflow, or relative if configured
-                uploaded_files[filename] = file_path # Key is filename, value is path
+                uploaded_files[filename] = file_path
 
-    # Form data might be mixed with files
+    # Extract message and conversation_id
     if request.content_type.startswith('multipart/form-data'):
         message = request.form.get('message', '')
         conversation_id = request.form.get('conversation_id')
@@ -149,10 +150,8 @@ def send_message():
         data = request.json
         message = data.get('message', '')
         conversation_id = data.get('conversation_id')
-        uploaded_files = data.get('attachments', {}) # If sent as JSON (unlikely for files)
 
     if not conversation_id:
-        # Auto-create conversation
         conversation = Conversation(user_id=user.id, title=message[:30] + "...", messages=[])
         db.session.add(conversation)
         db.session.commit()
@@ -167,7 +166,6 @@ def send_message():
         'timestamp': str(datetime.utcnow()),
         'attachments': list(uploaded_files.keys())
     }
-    # Create a new list for mutation to trigger SQLAlchemy JSON detection
     new_messages = list(conversation.messages)
     new_messages.append(user_msg_obj)
     conversation.messages = new_messages
@@ -177,129 +175,175 @@ def send_message():
     thread_id = str(conversation_id)
     config = {"configurable": {"thread_id": thread_id}}
 
-    # Check if we are resuming from an interrupt
-    # We can inspect the state of the graph
+    # Check current state
     current_state_snapshot = workflow_app.get_state(config)
 
+    # Check if we're resuming from an interrupt
     if current_state_snapshot.next:
-        # We are paused. We assume the user's message is the answer to the interrupt.
-        # We need to resume the workflow.
-        # Construct the Command to resume
-        # The interrupt logic in the tool just needs the text response.
-        resume_command = Command(resume=message)
-
+        # We have pending tasks - we're resuming from an interrupt
+        print(f"DEBUG: Resuming from interrupt with user response: {message}")
         try:
-            result = workflow_app.invoke(resume_command, config=config)
-            # If successful (no new interrupt), handle final output
-            final_output = result.get("final_refined_medical_output", "Analysis Complete.")
+            # Resume with the user's message
+            result = workflow_app.invoke(Command(resume=message), config=config)
+            
+            # Check if finished or interrupted again
+            final_state = workflow_app.get_state(config)
+            
+            if not final_state.next:
+                # Workflow completed
+                final_output = result.get("final_refined_medical_output", "Analysis complete.")
+                
+                assistant_msg_obj = {
+                    'role': 'assistant',
+                    'content': final_output,
+                    'timestamp': str(datetime.utcnow())
+                }
+                new_messages = list(conversation.messages)
+                new_messages.append(assistant_msg_obj)
+                conversation.messages = new_messages
+                db.session.commit()
 
-            # Save assistant response
-            assistant_msg_obj = {
-                'role': 'assistant',
-                'content': final_output,
-                'timestamp': str(datetime.utcnow())
-            }
-            new_messages = list(conversation.messages)
-            new_messages.append(assistant_msg_obj)
-            conversation.messages = new_messages
-            db.session.commit()
+                return jsonify({
+                    'status': 'completed',
+                    'response': final_output,
+                    'conversation_id': conversation.id
+                })
+            else:
+                # Interrupted again - get new question
+                if final_state.tasks and final_state.tasks[0].interrupts:
+                    interrupt_value = final_state.tasks[0].interrupts[0].value
+                    
+                    system_msg_obj = {
+                        'role': 'system_question',
+                        'content': interrupt_value,
+                        'timestamp': str(datetime.utcnow())
+                    }
+                    new_messages = list(conversation.messages)
+                    new_messages.append(system_msg_obj)
+                    conversation.messages = new_messages
+                    db.session.commit()
 
-            return jsonify({
-                'status': 'completed',
-                'response': final_output,
-                'conversation_id': conversation.id
-            })
+                    return jsonify({
+                        'status': 'interrupted',
+                        'question': interrupt_value,
+                        'conversation_id': conversation.id
+                    })
+        
+        except GraphInterrupt as e:
+            # Workflow was interrupted
+            print(f"DEBUG: GraphInterrupt caught during resume")
+            final_state = workflow_app.get_state(config)
+            
+            if final_state.tasks and final_state.tasks[0].interrupts:
+                interrupt_value = final_state.tasks[0].interrupts[0].value
+                
+                system_msg_obj = {
+                    'role': 'system_question',
+                    'content': interrupt_value,
+                    'timestamp': str(datetime.utcnow())
+                }
+                new_messages = list(conversation.messages)
+                new_messages.append(system_msg_obj)
+                conversation.messages = new_messages
+                db.session.commit()
 
+                return jsonify({
+                    'status': 'interrupted',
+                    'question': interrupt_value,
+                    'conversation_id': conversation.id
+                })
+        
         except Exception as e:
-            # Check if it's another interrupt (GraphInterrupt is caught by invoke usually,
-            # but if it returns due to interrupt, we need to check state)
-            # Actually invoke() returns the state. If it stopped due to interrupt,
-            # we need to check the tasks.
-
-            # Let's inspect the state after invoke
-            post_run_state = workflow_app.get_state(config)
-            if post_run_state.next:
-                 # It's an interrupt again (unlikely in this specific flow, but possible)
-                 # Or if the first invoke raises GraphInterrupt, we catch it here.
-                 # Wait, invoke() raises GraphInterrupt if interrupted?
-                 # LangGraph docs: "When you call invoke.. and an interrupt is hit... it raises GraphInterrupt"
-                 # OR it just returns partial state?
-                 # It actually raises GraphInterrupt.
-                 pass
+            print(f"ERROR: Unexpected error during resume: {e}")
+            import traceback
+            traceback.print_exc()
+            return jsonify({'error': 'Workflow error during resume'}), 500
 
     else:
-        # Start new run
+        # Start new workflow run
         initial_state = {
             "input_prompt": message,
             "attachments": uploaded_files,
             "user_id": str(user.id),
-            "conversation_history": [
-                # Map DB history to LangChain messages format if needed by agents
-                # For now, we pass the raw list or just let the workflow manage it.
-                # The workflow "conversation_history" key expects List[Dict].
-                # We can pass the full history.
-                msg for msg in conversation.messages
-            ]
+            "conversation_history": []
         }
 
-        # We use a loop/try block to handle potential interrupts
         try:
             result = workflow_app.invoke(initial_state, config=config)
+            
+            # Check if completed or interrupted
+            final_state = workflow_app.get_state(config)
+            
+            if not final_state.next:
+                # Completed successfully
+                final_output = result.get("final_refined_medical_output", "I could not process that request.")
 
-            # If we got here, it finished successfully
-            final_output = result.get("final_refined_medical_output", "I could not process that request.")
+                assistant_msg_obj = {
+                    'role': 'assistant',
+                    'content': final_output,
+                    'timestamp': str(datetime.utcnow())
+                }
+                new_messages = list(conversation.messages)
+                new_messages.append(assistant_msg_obj)
+                conversation.messages = new_messages
+                db.session.commit()
 
-             # Save assistant response
-            assistant_msg_obj = {
-                'role': 'assistant',
-                'content': final_output,
-                'timestamp': str(datetime.utcnow())
-            }
-            new_messages = list(conversation.messages)
-            new_messages.append(assistant_msg_obj)
-            conversation.messages = new_messages
-            db.session.commit()
+                return jsonify({
+                    'status': 'completed',
+                    'response': final_output,
+                    'conversation_id': conversation.id
+                })
+            else:
+                # Workflow was interrupted - ask user for info
+                if final_state.tasks and final_state.tasks[0].interrupts:
+                    interrupt_value = final_state.tasks[0].interrupts[0].value
+                    
+                    system_msg_obj = {
+                        'role': 'system_question',
+                        'content': interrupt_value,
+                        'timestamp': str(datetime.utcnow())
+                    }
+                    new_messages = list(conversation.messages)
+                    new_messages.append(system_msg_obj)
+                    conversation.messages = new_messages
+                    db.session.commit()
 
-            return jsonify({
-                'status': 'completed',
-                'response': final_output,
-                'conversation_id': conversation.id
-            })
+                    return jsonify({
+                        'status': 'interrupted',
+                        'question': interrupt_value,
+                        'conversation_id': conversation.id
+                    })
 
+        except GraphInterrupt as e:
+            # This should not happen with invoke() - it returns state instead
+            # But handle it just in case
+            print(f"DEBUG: GraphInterrupt caught during initial invoke")
+            final_state = workflow_app.get_state(config)
+            
+            if final_state.tasks and final_state.tasks[0].interrupts:
+                interrupt_value = final_state.tasks[0].interrupts[0].value
+                
+                system_msg_obj = {
+                    'role': 'system_question',
+                    'content': interrupt_value,
+                    'timestamp': str(datetime.utcnow())
+                }
+                new_messages = list(conversation.messages)
+                new_messages.append(system_msg_obj)
+                conversation.messages = new_messages
+                db.session.commit()
+
+                return jsonify({
+                    'status': 'interrupted',
+                    'question': interrupt_value,
+                    'conversation_id': conversation.id
+                })
+        
         except Exception as e:
-            # If it's a GraphInterrupt, we need to handle it.
-            # LangGraph raises a specific exception or just stops.
-            # If checking state reveals tasks, it's interrupted.
-            pass
+            print(f"ERROR: Unexpected error during workflow: {e}")
+            import traceback
+            traceback.print_exc()
+            return jsonify({'error': 'Workflow execution error'}), 500
 
-    # If we are here, we might have been interrupted (either from start or resume)
-    # Let's check the state
-    snapshot = workflow_app.get_state(config)
-    if snapshot.next:
-        # Get the interrupt details
-        # The interrupt value is returned in the snapshot
-        if snapshot.tasks:
-            # The interrupt value is usually in the `interrupts` property of the task
-            # Tuple of (interrupt_value, )
-            interrupt_value = snapshot.tasks[0].interrupts[0].value
+    return jsonify({'error': 'Unknown workflow state'}), 500
 
-            # Save the system question to DB
-            system_msg_obj = {
-                'role': 'system_question',
-                'content': interrupt_value,
-                'timestamp': str(datetime.utcnow())
-            }
-            new_messages = list(conversation.messages)
-            new_messages.append(system_msg_obj)
-            conversation.messages = new_messages
-            db.session.commit()
-
-            return jsonify({
-                'status': 'interrupted',
-                'question': interrupt_value,
-                'conversation_id': conversation.id
-            })
-
-    return jsonify({'error': 'Workflow failed or entered unknown state'}), 500
-
-from datetime import datetime

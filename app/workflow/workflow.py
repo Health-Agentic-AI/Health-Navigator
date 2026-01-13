@@ -453,6 +453,26 @@ def output_refiner_node(state: AgentState):
     - Break down long paragraphs into digestible sections
     - Use bullet points or numbering for clarity where appropriate
 
+    ## Output Formatting Guidelines
+
+    When generating responses, use the following markdown-style formatting that will be rendered in the user interface:
+
+    **Supported Formatting:**
+    - Use **double asterisks** for bold text: **bold text**
+    - Use ## for main headings and ### for subheadings
+    - Use *** or --- on a single line for horizontal dividers
+    - Use * or - at the start of lines for bullet points
+    - Use double line breaks to separate paragraphs
+
+    **DO NOT USE:**
+    - Markdown tables with pipes (| Column | Column |) - Instead, describe information in bullet points or simple text
+    - Complex nested formatting or multiple formatting styles on the same text
+    - Code blocks with ``` backticks
+    - Numbered lists (use bullets instead)
+    - Inline code with single backticks
+
+    Keep formatting simple and one level deep for optimal display in the web interface.
+
     Your goal: Make the information easier to understand while keeping every medical fact exactly as stated."""
     
     # Create messages with system and user prompts
