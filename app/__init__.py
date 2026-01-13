@@ -12,8 +12,9 @@ migrate = Migrate()
 def create_app():
     app = Flask(__name__)
 
-    # Database Configuration
-    app.config['SQLALCHEMY_DATABASE_URI'] = f'postgresql+psycopg2://{os.environ.get("POSTGRES_USERNAME", "postgres")}:{os.environ.get("POSTGRES_PASSWORD", "password")}@{os.environ.get("POSTGRES_HOST", "localhost")}:{os.environ.get("POSTGRES_PORT", "5432")}/{os.environ.get("DATABASE_NAME", "medical_db")}'
+    # Database Configuration - Switched to MySQL
+    # Using pymysql as driver
+    app.config['SQLALCHEMY_DATABASE_URI'] = f'mysql+pymysql://{os.environ.get("MYSQL_USER", "root")}:{os.environ.get("MYSQL_PASSWORD", "password")}@{os.environ.get("MYSQL_HOST", "localhost")}:{os.environ.get("MYSQL_PORT", "3306")}/{os.environ.get("DATABASE_NAME", "medical_db")}'
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.config['SECRET_KEY'] = os.environ.get("FLASK_SECRET_KEY", "dev-key-please-change")
 

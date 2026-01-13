@@ -1,6 +1,6 @@
 from app import db
 from datetime import datetime
-from sqlalchemy.dialects.postgresql import JSON, ARRAY
+from sqlalchemy import JSON
 
 class User(db.Model):
     __tablename__ = 'users'
@@ -39,8 +39,8 @@ class Conversation(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     title = db.Column(db.String(255))
-    messages = db.Column(JSON, nullable=False, default=list) # Stores list of message objects
-    # Note: 'messages' JSON structure: [{'role': 'user'|'assistant'|'system', 'content': '...', 'timestamp': '...'}]
+    # Used generic JSON type which SQLAlchemy maps to appropriate type for backend (JSON for MySQL 5.7+, Text otherwise)
+    messages = db.Column(JSON, nullable=False, default=list)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     last_updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
