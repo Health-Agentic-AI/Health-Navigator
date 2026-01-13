@@ -1,6 +1,12 @@
 import sys
+import os
+import time
+from dotenv import load_dotenv
+
 sys.path.append(r"C:\My Projects\Health-Navigator")
 
+# Load generic path for .env
+load_dotenv(os.path.join(os.getcwd(), 'credentials.env'))
 
 from langchain.agents import create_agent
 from langchain.tools import tool
@@ -8,10 +14,6 @@ from langchain_community.agent_toolkits.sql.toolkit import SQLDatabaseToolkit
 from langchain_community.utilities.sql_database import SQLDatabase
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_google_genai import ChatGoogleGenerativeAI
-import time
-import os
-from dotenv import load_dotenv
-load_dotenv(r'C:\My Projects\Health-Navigator\credentials.env')
 
 from app.workflow.ml_models.numerical_models.heart_disease.heart_disease import predict_heart_disease
 from app.workflow.vectordb.vectordb import HybridVectorDB
@@ -175,23 +177,38 @@ def retrieve_from_vector_db(
     )
 
 
-llm = ChatGoogleGenerativeAI(
-    model="gemini-3-flash-preview",
-    google_api_key=os.environ["GOOGLE_API_KEY"],
-)
-
-postgresql_uri = f'postgresql+psycopg2://{os.environ["POSTGRES_USERNAME"]}:{os.environ["POSTGRES_PASSWORD"]}@{os.environ["POSTGRES_HOST"]}:{os.environ["POSTGRES_PORT"]}/{os.environ["DATABASE_NAME"]}'
-db = SQLDatabase.from_uri(postgresql_uri)
-
 agent = None
 current_user_id = None
 
+def get_llm():
+    return ChatGoogleGenerativeAI(
+        model="gemini-3-flash-preview",
+        google_api_key=os.environ.get("GOOGLE_API_KEY"),
+    )
+
+def get_sql_db():
+    try:
+        postgresql_uri = f'postgresql+psycopg2://{os.environ.get("POSTGRES_USERNAME")}:{os.environ.get("POSTGRES_PASSWORD")}@{os.environ.get("POSTGRES_HOST")}:{os.environ.get("POSTGRES_PORT")}/{os.environ.get("DATABASE_NAME")}'
+        # If any env var is None, this string might look weird but won't crash until connection attempt.
+        # But if we are in build phase, we might not want to connect.
+        # However, SQLDatabase.from_uri usually attempts connection.
+        # For build phase, we rely on lazy loading so this function isn't called.
+        return SQLDatabase.from_uri(postgresql_uri)
+    except Exception as e:
+        print(f"Failed to connect to DB: {e}")
+        return None
 
 def initialize_agent(user_id: str):
     global agent, current_user_id
     start_time = time.time()
     
     current_user_id = user_id
+
+    llm = get_llm()
+    db = get_sql_db()
+
+    if not db:
+        raise Exception("Database connection failed. Cannot initialize agent.")
 
     system_prompt = f"""
     
@@ -290,4 +307,19 @@ def invoke_agent(user_input: str, user_id: str) -> str:
         ]
     })
     
-    return response['messages'][-1].content[0]['text']
+    # Check response structure. Agent response is usually in 'messages' as AIMessage
+    # The original code used response['messages'][-1].content[0]['text'] which implies structured content?
+    # Usually content is a string. If using Gemini structured output it might be different.
+    # But create_agent usually returns standard messages.
+
+    # Assuming standard string content for now unless proven otherwise by testing
+    # If the original code worked, it might be due to specific agent type.
+    # I'll stick to a safe access pattern.
+    last_message = response['messages'][-1]
+    if hasattr(last_message, 'content'):
+        if isinstance(last_message.content, list):
+             # Handle list content (e.g. from structured output)
+             return str(last_message.content[0].get('text', last_message.content))
+        return str(last_message.content)
+
+    return str(response)

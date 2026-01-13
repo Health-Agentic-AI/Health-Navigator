@@ -12,8 +12,8 @@ import operator
 
 
 
-from helper_utils.clear_valid_input_validator.input_validator import validate_first_input, validate_input_text_only
-from helper_utils.extract_text_from_attachments import extract_text_from_file
+from app.workflow.helper_utils.clear_valid_input_validator.input_validator import validate_first_input, validate_input_text_only
+from app.workflow.helper_utils.extract_text_from_attachments import extract_text_from_file
 
 from app.workflow.ml_models.vision_models.input_image_classification.image_classifier import classify_image
 from app.workflow.ml_models.vision_models.ocr import extract_text
@@ -143,22 +143,47 @@ def second_input_validation_node(state: AgentState):
     return second_input_validation_route(state)
 
 def input_not_valid_fallback_node(state: AgentState):
-    validation_results = state["input_validation_result"]
+    """
+    Handles invalid input cases by using an LLM to generate a helpful and specific error message.
+    """
+    validation_results = state.get("input_validation_result", "UNKNOWN_ERROR")
+    error_context = ""
 
     if state["coming_from_validation"] == "first_input_text":
-
-        if validation_results == "TEXT_VALID_ATTACHMENT_NOT_VALID": # TODO will be implemented later (return to the frontend)
-            pass
-        elif validation_results == "TEXT_NOT_VALID_ATTACHMENT_VALID": # TODO will be implemented later (return to the frontend)
-            pass
-        elif validation_results == "TEXT_NOT_VALID_ATTACHMENT_NOT_VALID": # TODO will be implemented later (return to the frontend)
-            pass
+        if validation_results == "TEXT_VALID_ATTACHMENT_NOT_VALID":
+            error_context = "The text input is valid, but the attachment format is not supported or corrupt."
+        elif validation_results == "TEXT_NOT_VALID_ATTACHMENT_VALID":
+            error_context = "The attachment is valid, but the text input is missing or invalid."
+        elif validation_results == "TEXT_NOT_VALID_ATTACHMENT_NOT_VALID":
+            error_context = "Both the text input and the attachment are invalid."
     
     elif state["coming_from_validation"] == "second_input_text":
-        pass # TODO will be implemented later (Not a valid extracted text eather from an image or a file) (return to the frontend)
+        error_context = "The text extracted from the provided file or image is invalid or empty."
 
     elif state["coming_from_validation"] == "input_image":
-        pass # TODO will be implemented later (Not a valid image)
+        error_context = "The provided image could not be processed or is not a valid medical image."
+
+    # Initialize LLM for error generation
+    llm = ChatGoogleGenerativeAI(
+        model="gemini-2.5-flash-preview-09-2025",
+        google_api_key=os.environ["GOOGLE_API_KEY"],
+    )
+
+    system_prompt = """You are a helpful assistant for a medical application.
+    Your task is to explain to the user why their input was invalid based on the provided technical context.
+    Be polite, clear, and offer a suggestion on how to fix it.
+    Keep the message short and user-friendly."""
+
+    messages = [
+        ("system", system_prompt),
+        ("human", f"Technical Context: {error_context}\n\nPlease generate a user-friendly error message.")
+    ]
+
+    response = llm.invoke(messages)
+    error_message = response.content
+
+    # Set the final output to the error message so the frontend can display it
+    state["final_refined_medical_output"] = error_message
     
     return state
 
@@ -502,9 +527,17 @@ workflow.add_conditional_edges(
 
 
 
-workflow.set_entry_point("first_input_validation_node")
-app = workflow.compile()
+from langgraph.checkpoint.memory import MemorySaver
 
-def run_workflow(initial_state):
-    returned_state = app.invoke(initial_state)
+workflow.set_entry_point("first_input_validation_node")
+
+# Use MemorySaver for state persistence to support interrupts
+checkpointer = MemorySaver()
+app = workflow.compile(checkpointer=checkpointer)
+
+def run_workflow(initial_state, thread_id: str):
+    config = {"configurable": {"thread_id": thread_id}}
+    # We use stream or invoke. Invoke handles interrupts by stopping and saving state.
+    # The caller needs to check the state.
+    returned_state = app.invoke(initial_state, config=config)
     return returned_state

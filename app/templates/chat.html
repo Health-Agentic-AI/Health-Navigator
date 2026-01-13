@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row" style="height: 85vh;">
+    <!-- Sidebar -->
+    <div class="col-md-3 border-end d-flex flex-column">
+        <div class="p-3 bg-light border-bottom">
+            <button class="btn btn-primary w-100" id="new-chat-btn">+ New Consultation</button>
+        </div>
+        <div class="flex-grow-1 overflow-auto" id="conversation-list">
+            {% for conv in conversations %}
+                <a href="#" class="list-group-item list-group-item-action border-0 p-3 conversation-item"
+                   data-id="{{ conv.id }}">
+                   <div class="d-flex w-100 justify-content-between">
+                       <h6 class="mb-1 text-truncate">{{ conv.title }}</h6>
+                   </div>
+                   <small class="text-muted">{{ conv.last_updated_at.strftime('%Y-%m-%d') }}</small>
+                </a>
+            {% endfor %}
+        </div>
+        <div class="p-3 border-top bg-light">
+            <div class="d-flex align-items-center">
+                <div class="avatar bg-secondary text-white rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 40px; height: 40px;">
+                    {{ user.full_name[0].upper() }}
+                </div>
+                <div>
+                    <small class="d-block fw-bold">{{ user.full_name }}</small>
+                    <small class="text-muted">Patient Profile</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chat Area -->
+    <div class="col-md-9 d-flex flex-column">
+        <!-- Chat Header -->
+        <div class="p-3 border-bottom bg-white d-flex justify-content-between align-items-center">
+            <h5 class="m-0" id="chat-title">New Consultation</h5>
+            <span class="badge bg-info text-dark" id="status-badge">Ready</span>
+        </div>
+
+        <!-- Messages Area -->
+        <div class="flex-grow-1 p-4 overflow-auto bg-light" id="chat-messages">
+            <div class="text-center text-muted mt-5" id="empty-state">
+                <h4>Welcome to Health Navigator</h4>
+                <p>Start a new consultation by describing your symptoms or uploading medical reports.</p>
+            </div>
+        </div>
+
+        <!-- Input Area -->
+        <div class="p-3 border-top bg-white">
+            <div id="interruption-alert" class="alert alert-warning d-none" role="alert">
+                <strong>Question from Medical Agent:</strong> <span id="question-text"></span>
+            </div>
+
+            <form id="chat-form" enctype="multipart/form-data">
+                <input type="hidden" id="current-conversation-id" name="conversation_id">
+
+                <div class="input-group">
+                    <button class="btn btn-outline-secondary" type="button" id="attachment-btn">
+                        📎
+                    </button>
+                    <input type="file" id="file-input" name="attachments" multiple class="d-none">
+                    <input type="text" class="form-control" id="message-input" name="message" placeholder="Type your symptoms or questions..." required>
+                    <button class="btn btn-primary" type="submit" id="send-btn">Send</button>
+                </div>
+                <div id="file-preview" class="mt-2 d-flex gap-2"></div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

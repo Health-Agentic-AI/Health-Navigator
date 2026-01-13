@@ -2,13 +2,17 @@ import os
 from dotenv import load_dotenv
 from google.cloud import vision
 
-load_dotenv(r'C:\My Projects\Health-Navigator\credentials.env')
+# Load environment variables (generic/safe path)
+load_dotenv(os.path.join(os.getcwd(), 'credentials.env'))
 
-client = vision.ImageAnnotatorClient()
+def get_vision_client():
+    return vision.ImageAnnotatorClient()
 
 def extract_text(path):
     """Detects text in the file."""
 
+    # Lazy initialization
+    client = get_vision_client()
 
     with open(path, "rb") as image_file:
         content = image_file.read()
@@ -34,4 +38,3 @@ def extract_text(path):
             "https://cloud.google.com/apis/design/errors".format(response.error.message)
         )
     return full_text
-
