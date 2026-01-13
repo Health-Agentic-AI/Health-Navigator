@@ -6,12 +6,15 @@ from langchain_community.utilities import SQLDatabase
 from langchain_community.agent_toolkits import SQLDatabaseToolkit
 from langchain_core.tools import tool
 from langchain.agents import create_agent
+import time 
 
 import sys
 sys.path.append(r"C:\My Projects\Health-Navigator")
 
 from dotenv import load_dotenv
 load_dotenv(r'C:\My Projects\Health-Navigator\credentials.env')
+
+
 
 MEDICAL_AGENT_SYSTEM_PROMPT = """You are an Expert Medical AI Assistant providing comprehensive clinical analysis and evidence-based recommendations.
 
@@ -87,6 +90,8 @@ Examples of valid information requests:
 - Severe pain, bleeding, breathing difficulties
 - Mental health crises
 
+Current date and time: {date_time} in format YYYY-MM-DD HH:MM:SS
+
 You are an AI assistant supporting healthcare decisions, not replacing healthcare professionals."""
 
 
@@ -109,11 +114,12 @@ def invoke_medical_agent(
         dict with keys: 'response', 'conversation_history', 'needs_more_info', 'info_request'
     """
 
-
+    date_time = time.strftime('%Y-%m-%d %H:%M:%S')
     # Format system prompt
     formatted_system_prompt = MEDICAL_AGENT_SYSTEM_PROMPT.format(
         reflection_count=reflection_count,
-        max_reflections=max_reflections
+        max_reflections=max_reflections,
+        date_time=date_time
     )
     
     # Build comprehensive medical context

@@ -6,6 +6,7 @@ from langchain_community.utilities import SQLDatabase
 from langchain_community.agent_toolkits import SQLDatabaseToolkit
 from langchain_core.tools import tool
 from langchain.agents import create_agent
+import time 
 
 import sys
 sys.path.append(r"C:\My Projects\Health-Navigator")
@@ -121,8 +122,8 @@ def ask_user_for_info(request: str) -> str:
         User's response
     """
     # TODO: Implement actual user interaction via frontend
-    print(f"\n[SYSTEM] User input needed: {request}")
-    return "DUMMY_USER_RESPONSE"  # Replace with actual user input in production
+    user_response = input(f"\n[SYSTEM] User input needed: {request}")
+    return user_response  # Replace with actual user input in production
 
 # Initialize LLM
 llm = ChatGoogleGenerativeAI(
@@ -189,6 +190,8 @@ INFORMATION_COMPLETE
 - At max iterations, work with available information
 - Only retrieve and organize - do NOT provide medical advice
 
+Current date and time: {date_time} in format YYYY-MM-DD HH:MM:SS
+
 Remember: The Medical Agent handles clinical analysis. Your role is comprehensive information retrieval."""
 
 
@@ -233,11 +236,12 @@ def invoke_db_retriever_agent(
         Task: Gather comprehensive patient information from all available databases
         to support medical assessment.
         """
-    
+    date_time = time.strftime('%Y-%m-%d %H:%M:%S')
     # Format system prompt with current iteration info
     formatted_system_prompt = DB_RETRIEVER_SYSTEM_PROMPT.format(
         reflection_count=reflection_count,
-        max_reflections=max_reflections
+        max_reflections=max_reflections,
+        date_time=date_time
     )
     
     retriever_agent = create_agent(
