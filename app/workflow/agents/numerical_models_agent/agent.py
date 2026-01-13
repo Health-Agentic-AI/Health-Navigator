@@ -99,6 +99,7 @@ def predict_heart_disease_tool(
         )
         # Returns: {'prediction': 1, 'probability': 0.6234}
     """
+    print(f"DEBUG: predict_heart_disease_tool called with args: {locals()}")
     patient_data = {
         'HighBP': HighBP,
         'HighChol': HighChol,
@@ -121,7 +122,9 @@ def predict_heart_disease_tool(
         'Income': Income
     }
     
-    return predict_heart_disease(patient_data, threshold=threshold)
+    result = predict_heart_disease(patient_data, threshold=threshold)
+    print(f"DEBUG: predict_heart_disease_tool result: {result}")
+    return result
 
 @tool
 def retrieve_from_vector_db(
@@ -296,6 +299,8 @@ def invoke_agent(user_input: str, user_id: str) -> str:
     Returns:
         Comprehensive plain text output
     """
+    print(f"\n--- Numerical Models Agent Invoked ---")
+    print(f"DEBUG: User Input: {user_input[:200]}...")
 
 
     if agent == None:
@@ -316,10 +321,15 @@ def invoke_agent(user_input: str, user_id: str) -> str:
     # If the original code worked, it might be due to specific agent type.
     # I'll stick to a safe access pattern.
     last_message = response['messages'][-1]
+    result = ""
     if hasattr(last_message, 'content'):
         if isinstance(last_message.content, list):
              # Handle list content (e.g. from structured output)
-             return str(last_message.content[0].get('text', last_message.content))
-        return str(last_message.content)
+             result = str(last_message.content[0].get('text', last_message.content))
+        else:
+             result = str(last_message.content)
+    else:
+        result = str(response)
 
-    return str(response)
+    print(f"DEBUG: Numerical Models Agent Response: {result[:200]}...")
+    return result

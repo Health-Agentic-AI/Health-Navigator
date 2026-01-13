@@ -62,15 +62,18 @@ def retrieve_from_vector_db(
             date_filter="after"
         )
     """
+    print(f"DEBUG: retrieve_from_vector_db called. Query: {query}, User ID: {user_id}")
     db = HybridVectorDB(user_id=user_id)
     
-    return db.retrieve(
+    results = db.retrieve(
         query=query,
         top_k=top_k,
         filters=filters,
         date=date,
         date_filter=date_filter
     )
+    print(f"DEBUG: retrieve_from_vector_db found {len(results)} results.")
+    return results
 
 
 @tool
@@ -270,12 +273,18 @@ def invoke_db_retriever_agent(
     }
     
     # Invoke agent
+    print(f"\n--- Information Retriever Agent Invoked ---")
+    print(f"DEBUG: Query Context: {query_context[:200]}...")
+
     result = retriever_agent.invoke(agent_input)
     agent_response = result["messages"][-1].content
     
     # Determine if information is complete
     needs_more_info = "INFORMATION_COMPLETE" not in agent_response
     
+    print(f"DEBUG: Retriever Agent Response: {agent_response[:200]}...")
+    print(f"DEBUG: Needs More Info: {needs_more_info}")
+
     return {
         'response': agent_response,
         'conversation_history': result["messages"],

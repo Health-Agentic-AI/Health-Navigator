@@ -69,15 +69,20 @@ class AgentState(TypedDict):
     final_refined_medical_output: str
 
 def first_input_validation_node(state: AgentState):
+    print("\n--- Entering Node: first_input_validation_node ---")
     input_prompt = state['input_prompt']
     attachments = list(state.get("attachments", {}).keys())
+    print(f"DEBUG: input_prompt: {input_prompt}")
+    print(f"DEBUG: attachments: {attachments}")
     
     first_input_validation_result = validate_first_input(input_prompt, attachments)
     state["input_validation_result"] = first_input_validation_result
     state["coming_from_validation"] = "first_input_text"
+    print(f"DEBUG: Validation Result: {first_input_validation_result}")
     
     # Determine routing
     if first_input_validation_result != "TEXT_VALID_ATTACHMENT_VALID":
+        print("DEBUG: Routing to input_not_valid_fallback_node")
         return Command(
             update=state,
             goto=["input_not_valid_fallback_node"]
@@ -107,6 +112,7 @@ def first_input_validation_node(state: AgentState):
     if text_provided and not attachments_files and not attachments_images:
         next_nodes.append("numerical_models_agent_node")
     
+    print(f"DEBUG: Exiting first_input_validation_node. Routing to: {next_nodes}")
     return Command(
         update={
             "input_validation_result": state["input_validation_result"],
@@ -118,7 +124,9 @@ def first_input_validation_node(state: AgentState):
     )
 
 def second_input_validation_node(state: AgentState):
+    print("\n--- Entering Node: second_input_validation_node ---")
     coming_from_validation = state["coming_from_extracted_text"]  # Now a list
+    print(f"DEBUG: coming_from_extracted_text: {coming_from_validation}")
     
     # Will contain ["images"] or ["attachments"] or ["images", "attachments"]
     full_input_text = []
@@ -146,7 +154,9 @@ def input_not_valid_fallback_node(state: AgentState):
     """
     Handles invalid input cases by using an LLM to generate a helpful and specific error message.
     """
+    print("\n--- Entering Node: input_not_valid_fallback_node ---")
     validation_results = state.get("input_validation_result", "UNKNOWN_ERROR")
+    print(f"DEBUG: input_validation_result: {validation_results}")
     error_context = ""
 
     if state["coming_from_validation"] == "first_input_text":
@@ -185,10 +195,13 @@ def input_not_valid_fallback_node(state: AgentState):
     # Set the final output to the error message so the frontend can display it
     state["final_refined_medical_output"] = error_message
     
+    print(f"DEBUG: Exiting input_not_valid_fallback_node. Error Message: {error_message}")
     return state
 
 def input_image_classification_node(state: AgentState):
+    print("\n--- Entering Node: input_image_classification_node ---")
     input_images_titles_and_paths = state["input_images_titles_and_paths"]
+    print(f"DEBUG: Processing {len(input_images_titles_and_paths)} images")
 
     results = []
     medical_images = []
@@ -216,12 +229,17 @@ def input_image_classification_node(state: AgentState):
 
     state["input_images_classification_results"] = results
 
+    print(f"DEBUG: Image Classification Results: {results}")
+    print("DEBUG: Exiting input_image_classification_node.")
+
     # Route using Command
     return input_image_classification_route(state)
 
 def extract_text_from_images_node(state: AgentState):
+    print("\n--- Entering Node: extract_text_from_images_node ---")
     full_images_results = state["text_images"]
     full_extracted_text = []
+    print(f"DEBUG: Processing {len(full_images_results)} text images")
 
     for image_result in full_images_results:
         
@@ -237,21 +255,24 @@ def extract_text_from_images_node(state: AgentState):
         # result[0] = title
         # result[1] = extracted_text
 
+    print(f"DEBUG: Exiting extract_text_from_images_node. Extracted text from {len(full_extracted_text)} images.")
     return {
         "extracted_text_from_images": full_extracted_text,
         "coming_from_extracted_text": ["images"]  # Now a list
     }
 
 def extract_text_from_files_node(state: AgentState):
-
+    print("\n--- Entering Node: extract_text_from_files_node ---")
     full_files = state["input_files_titles_and_paths"]
     full_extracted_text = []
+    print(f"DEBUG: Processing {len(full_files)} files")
 
     for title, path in full_files.items():
         extracted_text = extract_text_from_file(path)
 
         full_extracted_text.append([title, extracted_text])
 
+    print(f"DEBUG: Exiting extract_text_from_files_node. Extracted text from {len(full_extracted_text)} files.")
     return {
         "extracted_text_from_attachments": full_extracted_text,
         "coming_from_extracted_text": ["attachments"]  # Now a list
@@ -259,23 +280,29 @@ def extract_text_from_files_node(state: AgentState):
 
 
 def numerical_models_agent_node(state: AgentState):
+    print("\n--- Entering Node: numerical_models_agent_node ---")
     extracted_text = state.get("extracted_text_from_images_or_attachments_validation_results", "No extracted text")
     input_prompt = state['input_prompt'] if state['input_prompt'] else 'No input prompt'
 
     full_input = f"Input Prompt: {input_prompt}\n\n Extracted Text: {extracted_text}"
+    print(f"DEBUG: Full Input to Numerical Agent: {full_input[:200]}...")
 
 
     result = invoke_numerical_models_agent(user_input=full_input, user_id=state["user_id"])
 
+    print("DEBUG: Exiting numerical_models_agent_node.")
     return {"numerical_models_agent_output": result}
 
 
 def medical_vision_models_agent_node(state: AgentState):
+    print("\n--- Entering Node: medical_vision_models_agent_node ---")
     # very important note here: the paths of the images or anything in the workflow should contain \\ and not \
     images = state["medical_images"]
+    print(f"DEBUG: Sending {len(images)} images to Vision Agent")
     
     results = invoke_vision_models_agent(str(images))
 
+    print("DEBUG: Exiting medical_vision_models_agent_node.")
     return {"medical_vision_models_agent_output": results}
 
 
@@ -291,6 +318,7 @@ def initialize_reflection_state(state: AgentState) -> AgentState:
 
 def models_agents_output_aggregator_node(state: AgentState):
     """Enhanced version of your models_agents_output_aggregator_node"""
+    print("\n--- Entering Node: models_agents_output_aggregator_node ---")
     # Your existing aggregation logic here
     vision_agent_input = str(state.get("medical_images", "No medical images"))
     vision_agent_output = str(state.get("medical_vision_models_agent_output", "No vision agent output"))
@@ -315,6 +343,7 @@ def models_agents_output_aggregator_node(state: AgentState):
     # Initialize reflection state
     state = initialize_reflection_state(state)
     
+    print("DEBUG: Exiting models_agents_output_aggregator_node.")
     return state
 
 def db_retriever_agent_node(state: AgentState):
@@ -322,6 +351,7 @@ def db_retriever_agent_node(state: AgentState):
     Retrieves information from both vector and relational databases,
     and determines whether to query more, ask user, or provide results.
     """
+    print("\n--- Entering Node: db_retriever_agent_node ---")
     # Prepare context
     aggregated_output = state.get("models_agents_aggregated_output", "")
     info_request = state.get("info_request", "")
@@ -329,6 +359,9 @@ def db_retriever_agent_node(state: AgentState):
     max_reflections = state.get("max_reflections", 5)
     user_id = state["user_id"]
     
+    print(f"DEBUG: reflection_count: {reflection_count}/{max_reflections}")
+    print(f"DEBUG: info_request: {info_request}")
+
     # Invoke the DB retriever agent
     result = invoke_db_retriever_agent(
         aggregated_output=aggregated_output,
@@ -344,6 +377,7 @@ def db_retriever_agent_node(state: AgentState):
     state["db_query_results"] = result["response"][0]['text']
     state["medical_agent_needs_info"] = result["needs_more_info"]
     
+    print(f"DEBUG: Exiting db_retriever_agent_node. needs_more_info: {state['medical_agent_needs_info']}")
     return state
 
 
@@ -352,6 +386,7 @@ def medical_agent_node(state: AgentState):
     Analyzes patient information and provides medical assessment.
     Requests more information when critical data is missing.
     """
+    print("\n--- Entering Node: medical_agent_node ---")
     # Prepare context
     aggregated_output = state["models_agents_aggregated_output"]
     db_results = state.get("db_query_results", "No database results available")
@@ -374,10 +409,13 @@ def medical_agent_node(state: AgentState):
         state["medical_agent_needs_info"] = True
         state["info_request"] = result["info_request"]
         state["reflection_count"] = reflection_count + 1
+        print(f"DEBUG: Medical Agent requested more info: {state['info_request']}")
     else:
         state["medical_agent_needs_info"] = False
         state["medical_agent_output"] = result["response"][0]['text']
+        print("DEBUG: Medical Agent output generated.")
     
+    print("DEBUG: Exiting medical_agent_node.")
     return state
 
 
@@ -387,7 +425,9 @@ def output_refiner_node(state: AgentState):
     Refines the medical agent output to be more user-friendly while 
     preserving all medical accuracy and recommendations.
     """
+    print("\n--- Entering Node: output_refiner_node ---")
     medical_output = state.get("medical_agent_output", "No medical output available")
+    print(f"DEBUG: medical_output length: {len(medical_output)}")
     
     # Initialize LLM
     llm = ChatGoogleGenerativeAI(
@@ -430,6 +470,7 @@ def output_refiner_node(state: AgentState):
     # Store refined output in state
     state["final_refined_medical_output"] = refined_output
     
+    print("DEBUG: Exiting output_refiner_node. Refined output generated.")
     return state
 
 
@@ -437,17 +478,22 @@ def should_continue_reflection(state: AgentState) -> Literal["db_retriever_agent
     """
     Determines whether to continue reflection loop or end.
     """
+    print("\n--- Conditional Edge: should_continue_reflection ---")
     if state.get("medical_agent_needs_info", False):
+        print("DEBUG: Routing to db_retriever_agent_node (Needs Info)")
         return "db_retriever_agent_node"
+    print("DEBUG: Routing to output_refiner_node (Analysis Complete)")
     return "output_refiner_node"
 
 
 def input_image_classification_route(state: AgentState):
+    print("\n--- Conditional Routing: input_image_classification_route ---")
     full_images_results = state["input_images_classification_results"]
 
     for image_result in full_images_results:
         if image_result[2] == "not_valid_image":
             state["coming_from_validation"] = "input_image"
+            print("DEBUG: Routing to input_not_valid_fallback_node (Invalid Image)")
             return Command(update=state, goto=["input_not_valid_fallback_node"])
     
     nodes_to_return = []
@@ -460,6 +506,7 @@ def input_image_classification_route(state: AgentState):
     if state.get("input_prompt") and not state.get("text_images"):
         nodes_to_return.append("numerical_models_agent_node")
 
+    print(f"DEBUG: Routing to: {nodes_to_return}")
     return Command(
         update={
             "input_images_classification_results": state["input_images_classification_results"],
@@ -471,14 +518,17 @@ def input_image_classification_route(state: AgentState):
 
 
 def second_input_validation_route(state: AgentState):
+    print("\n--- Conditional Routing: second_input_validation_route ---")
     full_validation_results = state["extracted_text_from_images_or_attachments_validation_results"]
     
     for validation_result in full_validation_results:
         if validation_result != "TEXT_VALID":
             state["coming_from_validation"] = "second_input_text"
+            print("DEBUG: Routing to input_not_valid_fallback_node (Invalid Text)")
             return Command(update=state, goto=["input_not_valid_fallback_node"])
 
 
+    print("DEBUG: Routing to numerical_models_agent_node")
     return Command(
     update={
         "extracted_text_from_images_or_attachments_validation_results": state["extracted_text_from_images_or_attachments_validation_results"]
