@@ -556,13 +556,14 @@ workflow.add_node("db_retriever_agent_node", db_retriever_agent_node)
 workflow.add_node("medical_agent_node", medical_agent_node)
 
 
-workflow.add_edge(["extract_text_from_images_node", "extract_text_from_files_node"], "second_input_validation_node")
+workflow.add_edge("extract_text_from_images_node", "second_input_validation_node")
+workflow.add_edge("extract_text_from_files_node", "second_input_validation_node")
 
-workflow.add_edge(["numerical_models_agent_node", "medical_vision_models_agent_node"], "models_agents_output_aggregator_node")
+workflow.add_edge("numerical_models_agent_node", "models_agents_output_aggregator_node")
+workflow.add_edge("medical_vision_models_agent_node", "models_agents_output_aggregator_node")
 workflow.add_edge("models_agents_output_aggregator_node", "db_retriever_agent_node")
 workflow.add_edge("db_retriever_agent_node", "medical_agent_node")
 
-workflow.add_edge("medical_agent_node", "output_refiner_node")
 workflow.add_edge("output_refiner_node", END)
 
 
