@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import pickle
 import pandas as pd
+import os
 
 class HeartDiseaseNN(nn.Module):
     def __init__(self, input_size=19):
@@ -28,25 +29,40 @@ class HeartDiseaseNN(nn.Module):
         x = self.dropout4(self.relu(self.bn4(self.fc4(x))))
         return self.fc5(x)
 
-# Load model and scaler once at module level
+# Lazy loading globals
+model = None
+scaler = None
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-model = HeartDiseaseNN(input_size=19).to(device)
-checkpoint = torch.load(r'C:\My Projects\Health-Navigator\app\workflow\ml_models\numerical_models\heart_disease\training\results\saved_models\model_epoch_85.pth', 
-                       map_location=device, weights_only=False)
-model.load_state_dict(checkpoint['model_state_dict'])
-model.eval()
+def load_resources():
+    global model, scaler
+    if model is not None and scaler is not None:
+        return
 
-# Load scaler
-with open(r'C:\My Projects\Health-Navigator\app\workflow\ml_models\numerical_models\heart_disease\training\results\saved_models\scaler.pkl', 'rb') as f:
-    scaler = pickle.load(f)
+    # Relative paths
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    model_path = os.path.join(base_dir, 'training', 'results', 'saved_models', 'model_epoch_85.pth')
+    scaler_path = os.path.join(base_dir, 'training', 'results', 'saved_models', 'scaler.pkl')
+
+    if not os.path.exists(model_path):
+        raise FileNotFoundError(f"Model file not found at: {model_path}")
+
+    # Load Model
+    model = HeartDiseaseNN(input_size=19).to(device)
+    checkpoint = torch.load(model_path, map_location=device, weights_only=False)
+    model.load_state_dict(checkpoint['model_state_dict'])
+    model.eval()
+
+    # Load scaler
+    with open(scaler_path, 'rb') as f:
+        scaler = pickle.load(f)
 
 # Features that need scaling
 CONTINUOUS_COLS = ['BMI', 'MentHlth', 'PhysHlth', 'GenHlth', 'Age', 'Education', 'Income']
 
-import pandas as pd
-
 def predict_heart_disease(patient_data, threshold=0.40):
+    load_resources() # Ensure loaded
+
     feature_order = [
         'HighBP', 'HighChol', 'BMI', 'Smoker', 'Stroke', 'Diabetes',
         'PhysActivity', 'Fruits', 'Veggies', 'HvyAlcoholConsump',

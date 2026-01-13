@@ -33,8 +33,10 @@ def classify_colon_tissue_tool(image_path: str) -> str:
         classify_colon_tissue_tool("C:/images/sample.jpg")
         Returns: "Colorectal Adenocarcinoma Epithelium"
     """
+    print(f"DEBUG: classify_colon_tissue_tool called with: {image_path}")
     try:
         result = classify_colon(image_path)
+        print(f"DEBUG: classify_colon_tissue_tool result: {result}")
         return result
     except FileNotFoundError:
         return f"Error: Image not found at {image_path}"
@@ -62,10 +64,12 @@ def classify_chest_xray_tool(image_path: str) -> str:
         classify_chest_xray_tool("C:/images/xray.jpg")
         Returns: "Pneumonia (0.78), Infiltration (0.62)"
     """
+    print(f"DEBUG: classify_chest_xray_tool called with: {image_path}")
     try:
         results = classify_chest_xray(image_path)
         if not results:
             return "No significant findings detected"
+        print(f"DEBUG: classify_chest_xray_tool results: {results}")
         return results
     except FileNotFoundError:
         return f"Error: Image not found at {image_path}"
@@ -275,6 +279,8 @@ def invoke_agent(user_input: str) -> str:
     Returns:
         Comprehensive plain text output
     """
+    print(f"\n--- Vision Models Agent Invoked ---")
+    print(f"DEBUG: User Input: {user_input}")
 
 
     if agent == None:
@@ -286,4 +292,6 @@ def invoke_agent(user_input: str) -> str:
         ]
     })
     
-    return response['messages'][-1].content[0]['text']
+    result = response['messages'][-1].content[0]['text']
+    print(f"DEBUG: Vision Models Agent Result: {result}")
+    return result

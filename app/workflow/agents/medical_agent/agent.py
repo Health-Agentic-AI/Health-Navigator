@@ -138,6 +138,9 @@ def invoke_medical_agent(
     """
     
     # Create medical agent (simple LLM call, no tools needed)
+    print(f"\n--- Medical Agent Invoked ---")
+    print(f"DEBUG: Medical Context: {medical_context[:200]}...")
+
     messages = conversation_history + [
         SystemMessage(content=formatted_system_prompt),
         HumanMessage(content=medical_context)
@@ -145,6 +148,7 @@ def invoke_medical_agent(
     
     response = llm.invoke(messages)
     agent_response = response.content
+    print(f"DEBUG: Medical Agent Response: {agent_response[:200]}...")
     
     # Update conversation history
     updated_history = conversation_history + [response.content[0]['text']]

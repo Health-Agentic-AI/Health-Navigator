@@ -6,13 +6,15 @@ from langchain_community.utilities import SQLDatabase
 from langchain_community.agent_toolkits import SQLDatabaseToolkit
 from langchain_core.tools import tool
 from langchain.agents import create_agent
+from langgraph.types import interrupt
 import time 
 
 import sys
 sys.path.append(r"C:\My Projects\Health-Navigator")
 
 from dotenv import load_dotenv
-load_dotenv(r'C:\My Projects\Health-Navigator\credentials.env')
+# Load generic path for .env
+load_dotenv(os.path.join(os.getcwd(), 'credentials.env'))
 
 from app.workflow.vectordb.vectordb import HybridVectorDB
 
@@ -60,15 +62,18 @@ def retrieve_from_vector_db(
             date_filter="after"
         )
     """
+    print(f"DEBUG: retrieve_from_vector_db called. Query: {query}, User ID: {user_id}")
     db = HybridVectorDB(user_id=user_id)
     
-    return db.retrieve(
+    results = db.retrieve(
         query=query,
         top_k=top_k,
         filters=filters,
         date=date,
         date_filter=date_filter
     )
+    print(f"DEBUG: retrieve_from_vector_db found {len(results)} results.")
+    return results
 
 
 @tool
@@ -121,21 +126,24 @@ def ask_user_for_info(request: str) -> str:
     Returns:
         User's response
     """
-    # TODO: Implement actual user interaction via frontend
-    user_response = input(f"\n[SYSTEM] User input needed: {request}")
-    return user_response  # Replace with actual user input in production
+    # Trigger an interrupt to ask the user via frontend
+    user_response = interrupt(request)
+    return user_response
 
-# Initialize LLM
-llm = ChatGoogleGenerativeAI(
-    model="gemini-3-pro-preview",
-    google_api_key=os.environ["GOOGLE_API_KEY"],
-)
+# Helpers for lazy loading
+def get_llm():
+    return ChatGoogleGenerativeAI(
+        model="gemini-3-pro-preview",
+        google_api_key=os.environ.get("GOOGLE_API_KEY"),
+    )
 
-# Setup SQL Database
-postgresql_uri = f'postgresql+psycopg2://{os.environ["POSTGRES_USERNAME"]}:{os.environ["POSTGRES_PASSWORD"]}@{os.environ["POSTGRES_HOST"]}:{os.environ["POSTGRES_PORT"]}/{os.environ["DATABASE_NAME"]}'
-sql_db = SQLDatabase.from_uri(postgresql_uri)
-sql_toolkit = SQLDatabaseToolkit(db=sql_db, llm=llm)
-sql_tools = sql_toolkit.get_tools()
+def get_sql_db():
+    try:
+        mysql_uri = f'mysql+pymysql://{os.environ.get("MYSQL_USER")}:{os.environ.get("MYSQL_PASSWORD")}@{os.environ.get("MYSQL_HOST")}:{os.environ.get("MYSQL_PORT")}/{os.environ.get("DATABASE_NAME")}'
+        return SQLDatabase.from_uri(mysql_uri)
+    except Exception as e:
+        print(f"Failed to connect to DB: {e}")
+        return None
 
 # DB Retriever Agent System Prompt
 DB_RETRIEVER_SYSTEM_PROMPT = """You are a Medical Information Retrieval Specialist with access to vector databases, relational databases, and the ability to request information directly from users.
@@ -195,13 +203,6 @@ Current date and time: {date_time} in format YYYY-MM-DD HH:MM:SS
 Remember: The Medical Agent handles clinical analysis. Your role is comprehensive information retrieval."""
 
 
-
-# Combine SQL tools with vector DB tools
-all_tools = sql_tools + [retrieve_from_vector_db, add_to_vector_db, ask_user_for_info]
-
-# Create retriever agent
-
-
 def invoke_db_retriever_agent(
     aggregated_output: str,
     info_request: str,
@@ -216,6 +217,21 @@ def invoke_db_retriever_agent(
     Returns:
         dict with keys: 'response', 'conversation_history', 'needs_more_info'
     """
+    # Lazy load tools/resources
+    llm = get_llm()
+    sql_db = get_sql_db()
+
+    if not sql_db:
+        # Fallback if DB not available (e.g. build time) or throw error
+        # Assuming for now we want to proceed or crash
+        pass
+
+    sql_toolkit = SQLDatabaseToolkit(db=sql_db, llm=llm)
+    sql_tools = sql_toolkit.get_tools()
+
+    # Combine SQL tools with vector DB tools
+    all_tools = sql_tools + [retrieve_from_vector_db, add_to_vector_db, ask_user_for_info]
+
     # Build initial query context
     if info_request:
         query_context = f"""
@@ -245,10 +261,10 @@ def invoke_db_retriever_agent(
     )
     
     retriever_agent = create_agent(
-    llm,
-    tools=all_tools,
-    system_prompt=formatted_system_prompt
-)
+        llm,
+        tools=all_tools,
+        system_prompt=formatted_system_prompt
+    )
     # Prepare messages for agent
     agent_input = {
         "messages": conversation_history + [
@@ -257,16 +273,20 @@ def invoke_db_retriever_agent(
     }
     
     # Invoke agent
+    print(f"\n--- Information Retriever Agent Invoked ---")
+    print(f"DEBUG: Query Context: {query_context[:200]}...")
+
     result = retriever_agent.invoke(agent_input)
     agent_response = result["messages"][-1].content
     
     # Determine if information is complete
     needs_more_info = "INFORMATION_COMPLETE" not in agent_response
     
+    print(f"DEBUG: Retriever Agent Response: {agent_response[:200]}...")
+    print(f"DEBUG: Needs More Info: {needs_more_info}")
+
     return {
         'response': agent_response,
         'conversation_history': result["messages"],
         'needs_more_info': needs_more_info
     }
-
-

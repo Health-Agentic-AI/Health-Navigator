@@ -5,7 +5,8 @@ from google.genai import types
 import json
 import os
 
-load_dotenv('C:\My Projects\Health-Navigator\credentials.env')
+# Load environment variables (generic/safe path)
+load_dotenv(os.path.join(os.getcwd(), 'credentials.env'))
 
 class MedicalInputCheck(TypedDict):
     image_type: Literal['chest_xray', 'colon_tissue', 'text', 'not_valid_image']
@@ -27,19 +28,27 @@ system_prompt = """
 """
 
 
-client = genai.Client()
+def get_genai_client():
+    # It seems google.genai.Client picks up env vars automatically, but we wrap it for safety
+    return genai.Client(api_key=os.environ.get("GOOGLE_API_KEY"))
 
 def classify_image(image_title, image_path):
+    client = get_genai_client()
+
     with open(image_path, 'rb') as f:
         image_bytes = f.read()
 
+    # Determine mime type roughly or default to jpeg
+    mime_type = 'image/jpeg'
+    if image_path.lower().endswith('.png'):
+        mime_type = 'image/png'
 
     response = client.models.generate_content(
         model='gemini-3-flash-preview',
         contents=[
             types.Part.from_bytes(
                 data=image_bytes,
-                mime_type='image/jpeg',
+                mime_type=mime_type,
             ),
             f"Image Title: {image_title}"
         ],
