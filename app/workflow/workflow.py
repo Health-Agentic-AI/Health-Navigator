@@ -1,0 +1,510 @@
+import sys
+sys.path.append(r"C:\My Projects\Health-Navigator")
+
+from langgraph.graph import StateGraph, END
+from typing import TypedDict, List, Dict, Any
+import os
+from typing import Literal, List, Dict, Any, Annotated
+from typing_extensions import TypedDict
+from langchain_google_genai import ChatGoogleGenerativeAI
+from langgraph.types import Command
+import operator
+
+
+
+from helper_utils.clear_valid_input_validator.input_validator import validate_first_input, validate_input_text_only
+from helper_utils.extract_text_from_attachments import extract_text_from_file
+
+from app.workflow.ml_models.vision_models.input_image_classification.image_classifier import classify_image
+from app.workflow.ml_models.vision_models.ocr import extract_text
+
+from app.workflow.agents.numerical_models_agent.agent import invoke_agent as invoke_numerical_models_agent
+from app.workflow.agents.vision_models_agent.agent import invoke_agent as invoke_vision_models_agent
+
+from app.workflow.agents.information_retriever_agent.agent import invoke_db_retriever_agent
+from app.workflow.agents.medical_agent.agent import invoke_medical_agent
+
+
+
+class AgentState(TypedDict):
+    # Initial inputs
+    input_prompt: str
+    attachments: Dict[str, Any]
+    user_id: str
+    
+    # Validation
+    input_validation_result: str
+    coming_from_validation: str
+    coming_from_extracted_text: Annotated[List[str], operator.add]
+    extracted_text_from_images_or_attachments_validation_results: Annotated[List[str], operator.add]
+    
+    # Image processing
+    input_images_titles_and_paths: Dict[str, str]
+    input_images_classification_results: List[List[str]]
+    text_images: List[List[str]]
+    medical_images: List[List[str]]
+    extracted_text_from_images: List[List[str]]
+    
+    # File processing
+    input_files_titles_and_paths: Dict[str, str]
+    has_files: bool
+    extracted_text_from_attachments: List[List[str]]
+    
+    # Agent outputs
+    numerical_models_agent_output: str
+    medical_vision_models_agent_output: str
+    models_agents_aggregated_output: str
+    
+    # Database and medical agent
+    db_query_results: str
+    medical_agent_output: str
+    medical_agent_needs_info: bool
+    info_request: str
+    
+    # Reflection loop
+    reflection_count: int
+    max_reflections: int
+    conversation_history: List[Dict[str, Any]]
+
+    final_refined_medical_output: str
+
+def first_input_validation_node(state: AgentState):
+    input_prompt = state['input_prompt']
+    attachments = list(state.get("attachments", {}).keys())
+    
+    first_input_validation_result = validate_first_input(input_prompt, attachments)
+    state["input_validation_result"] = first_input_validation_result
+    state["coming_from_validation"] = "first_input_text"
+    
+    # Determine routing
+    if first_input_validation_result != "TEXT_VALID_ATTACHMENT_VALID":
+        return Command(
+            update=state,
+            goto=["input_not_valid_fallback_node"]
+        )
+    
+    # Route based on input type
+    text_provided = bool(input_prompt)
+    attachments_files = {}
+    attachments_images = {}
+    
+    for key, value in state.get('attachments', {}).items():
+        if value.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp', '.gif', '.tiff')):
+            attachments_images[key] = value
+        else:
+            attachments_files[key] = value
+    
+    state["input_images_titles_and_paths"] = attachments_images
+    state["input_files_titles_and_paths"] = attachments_files
+    state["has_files"] = bool(attachments_files)
+    
+    # Determine next nodes
+    next_nodes = []
+    if attachments_files:
+        next_nodes.append("extract_text_from_files_node")
+    if attachments_images:
+        next_nodes.append("input_image_classification_node")
+    if text_provided and not attachments_files and not attachments_images:
+        next_nodes.append("numerical_models_agent_node")
+    
+    return Command(
+        update={
+            "input_validation_result": state["input_validation_result"],
+            "input_images_titles_and_paths": state["input_images_titles_and_paths"],
+            "input_files_titles_and_paths": state["input_files_titles_and_paths"],
+            "has_files": state["has_files"]
+        },
+        goto=next_nodes
+    )
+
+def second_input_validation_node(state: AgentState):
+    coming_from_validation = state["coming_from_extracted_text"]  # Now a list
+    
+    # Will contain ["images"] or ["attachments"] or ["images", "attachments"]
+    full_input_text = []
+    
+    if "images" in coming_from_validation:
+        full_input_text.extend(state["extracted_text_from_images"])
+    if "attachments" in coming_from_validation:
+        full_input_text.extend(state["extracted_text_from_attachments"])
+
+    full_validation_results = []
+
+    for input_text in full_input_text:
+        title = input_text[0]
+        extracted_text = input_text[1]
+
+        one_validation_results = validate_input_text_only(title, extracted_text)
+        full_validation_results.append(one_validation_results)
+        
+    state["extracted_text_from_images_or_attachments_validation_results"] = full_validation_results
+
+    # Route using Command
+    return second_input_validation_route(state)
+
+def input_not_valid_fallback_node(state: AgentState):
+    validation_results = state["input_validation_result"]
+
+    if state["coming_from_validation"] == "first_input_text":
+
+        if validation_results == "TEXT_VALID_ATTACHMENT_NOT_VALID": # TODO will be implemented later (return to the frontend)
+            pass
+        elif validation_results == "TEXT_NOT_VALID_ATTACHMENT_VALID": # TODO will be implemented later (return to the frontend)
+            pass
+        elif validation_results == "TEXT_NOT_VALID_ATTACHMENT_NOT_VALID": # TODO will be implemented later (return to the frontend)
+            pass
+    
+    elif state["coming_from_validation"] == "second_input_text":
+        pass # TODO will be implemented later (Not a valid extracted text eather from an image or a file) (return to the frontend)
+
+    elif state["coming_from_validation"] == "input_image":
+        pass # TODO will be implemented later (Not a valid image)
+    
+    return state
+
+def input_image_classification_node(state: AgentState):
+    input_images_titles_and_paths = state["input_images_titles_and_paths"]
+
+    results = []
+    medical_images = []
+    text_images = []
+
+    for title, path in input_images_titles_and_paths.items():
+        classification = classify_image(title, path)
+        
+        result = [title, path, classification]
+
+        if classification == "text":
+            text_images.append(result)
+        elif classification == "not_valid_image":
+            pass
+        else:
+            medical_images.append(result)
+
+        results.append(result)
+
+    if text_images:
+        state["text_images"] = text_images
+        
+    if medical_images:
+        state["medical_images"] = medical_images
+
+    state["input_images_classification_results"] = results
+
+    # Route using Command
+    return input_image_classification_route(state)
+
+def extract_text_from_images_node(state: AgentState):
+    full_images_results = state["text_images"]
+    full_extracted_text = []
+
+    for image_result in full_images_results:
+        
+        # image_result[0] = title
+        # image_result[1] = path
+        # image_result[2] = classification
+        title = image_result[0]
+        path = image_result[1]
+
+        extracted_text = extract_text(path)
+
+        full_extracted_text.append([title, extracted_text])
+        # result[0] = title
+        # result[1] = extracted_text
+
+    return {
+        "extracted_text_from_images": full_extracted_text,
+        "coming_from_extracted_text": ["images"]  # Now a list
+    }
+
+def extract_text_from_files_node(state: AgentState):
+
+    full_files = state["input_files_titles_and_paths"]
+    full_extracted_text = []
+
+    for title, path in full_files.items():
+        extracted_text = extract_text_from_file(path)
+
+        full_extracted_text.append([title, extracted_text])
+
+    return {
+        "extracted_text_from_attachments": full_extracted_text,
+        "coming_from_extracted_text": ["attachments"]  # Now a list
+    }
+
+
+def numerical_models_agent_node(state: AgentState):
+    extracted_text = state.get("extracted_text_from_images_or_attachments_validation_results", "No extracted text")
+    input_prompt = state['input_prompt'] if state['input_prompt'] else 'No input prompt'
+
+    full_input = f"Input Prompt: {input_prompt}\n\n Extracted Text: {extracted_text}"
+
+
+    result = invoke_numerical_models_agent(user_input=full_input, user_id=state["user_id"])
+
+    return {"numerical_models_agent_output": result}
+
+
+def medical_vision_models_agent_node(state: AgentState):
+    # very important note here: the paths of the images or anything in the workflow should contain \\ and not \
+    images = state["medical_images"]
+    
+    results = invoke_vision_models_agent(str(images))
+
+    return {"medical_vision_models_agent_output": results}
+
+
+def initialize_reflection_state(state: AgentState) -> AgentState:
+    """Initialize reflection-related fields if not present."""
+    if "reflection_count" not in state:
+        state["reflection_count"] = 0
+    if "max_reflections" not in state:
+        state["max_reflections"] = 5
+    if "conversation_history" not in state:
+        state["conversation_history"] = []
+    return state
+
+def models_agents_output_aggregator_node(state: AgentState):
+    """Enhanced version of your models_agents_output_aggregator_node"""
+    # Your existing aggregation logic here
+    vision_agent_input = str(state.get("medical_images", "No medical images"))
+    vision_agent_output = str(state.get("medical_vision_models_agent_output", "No vision agent output"))
+    input_prompt = str(state.get('input_prompt', 'No input prompt'))
+    numerical_agent_input = str(state.get("extracted_text_from_images_or_attachments_validation_results", "No extracted text"))
+    numerical_agent_output = str(state.get("numerical_models_agent_output", "No numerical agent output"))
+
+    full_aggregated_output = f"""
+    Input Prompt: {input_prompt}
+    
+    Numerical Analysis:
+    Input: {numerical_agent_input}
+    Output: {numerical_agent_output}
+    
+    Vision Analysis:
+    Input: {vision_agent_input}
+    Output: {vision_agent_output}
+    """
+    
+    state["models_agents_aggregated_output"] = full_aggregated_output
+    
+    # Initialize reflection state
+    state = initialize_reflection_state(state)
+    
+    return state
+
+def db_retriever_agent_node(state: AgentState):
+    """
+    Retrieves information from both vector and relational databases,
+    and determines whether to query more, ask user, or provide results.
+    """
+    # Prepare context
+    aggregated_output = state.get("models_agents_aggregated_output", "")
+    info_request = state.get("info_request", "")
+    reflection_count = state.get("reflection_count", 0)
+    max_reflections = state.get("max_reflections", 5)
+    user_id = state["user_id"]
+    
+    # Invoke the DB retriever agent
+    result = invoke_db_retriever_agent(
+        aggregated_output=aggregated_output,
+        info_request=info_request,
+        reflection_count=reflection_count,
+        max_reflections=max_reflections,
+        user_id=user_id,
+        conversation_history=state["conversation_history"]
+    )
+    
+    # Update state with results
+    state["conversation_history"] = result["conversation_history"]
+    state["db_query_results"] = result["response"][0]['text']
+    state["medical_agent_needs_info"] = result["needs_more_info"]
+    
+    return state
+
+
+def medical_agent_node(state: AgentState):
+    """
+    Analyzes patient information and provides medical assessment.
+    Requests more information when critical data is missing.
+    """
+    # Prepare context
+    aggregated_output = state["models_agents_aggregated_output"]
+    db_results = state.get("db_query_results", "No database results available")
+    reflection_count = state.get("reflection_count", 0)
+    max_reflections = state.get("max_reflections", 5)
+    
+    # Invoke the medical agent
+    result = invoke_medical_agent(
+        aggregated_output=aggregated_output,
+        db_results=db_results,
+        reflection_count=reflection_count,
+        max_reflections=max_reflections,
+        conversation_history=state["conversation_history"]
+    )
+    
+    # Update state with results
+    state["conversation_history"] = result["conversation_history"]
+    
+    if result["needs_more_info"]:
+        state["medical_agent_needs_info"] = True
+        state["info_request"] = result["info_request"]
+        state["reflection_count"] = reflection_count + 1
+    else:
+        state["medical_agent_needs_info"] = False
+        state["medical_agent_output"] = result["response"][0]['text']
+    
+    return state
+
+
+
+def output_refiner_node(state: AgentState):
+    """
+    Refines the medical agent output to be more user-friendly while 
+    preserving all medical accuracy and recommendations.
+    """
+    medical_output = state.get("medical_agent_output", "No medical output available")
+    
+    # Initialize LLM
+    llm = ChatGoogleGenerativeAI(
+        model="gemini-2.5-flash-preview-09-2025",
+        google_api_key=os.environ["GOOGLE_API_KEY"],
+    )
+    
+    # System prompt with strict medical preservation instructions
+    system_prompt = """You are a medical communication expert. Your task is to make medical information more accessible and user-friendly while maintaining ABSOLUTE medical accuracy.
+
+    STRICT RULES - YOU MUST FOLLOW THESE:
+    1. DO NOT change, modify, or omit ANY medical diagnoses, test results, measurements, or clinical findings
+    2. DO NOT alter any medication names, dosages, or treatment recommendations
+    3. DO NOT change any medical terminology that is critical to understanding the diagnosis
+    4. DO NOT add any medical advice or recommendations that weren't in the original output
+    5. DO NOT remove any warnings, precautions, or important medical information
+
+    WHAT YOU CAN DO:
+    - Add simple explanations of complex medical terms in parentheses
+    - Organize information with clear headings and structure
+    - Use more conversational language for non-medical connecting text
+    - Add brief context to help patients understand their results
+    - Break down long paragraphs into digestible sections
+    - Use bullet points or numbering for clarity where appropriate
+
+    Your goal: Make the information easier to understand while keeping every medical fact exactly as stated."""
+    
+    # Create messages with system and user prompts
+    messages = [
+        ("system", system_prompt),
+        ("human", f"Please refine this medical information to be more user-friendly:\n\n{medical_output}")
+    ]
+    
+    # Invoke LLM
+    response = llm.invoke(messages)
+    
+    # Extract refined content
+    refined_output = response.content
+    
+    # Store refined output in state
+    state["final_refined_medical_output"] = refined_output
+    
+    return state
+
+
+def should_continue_reflection(state: AgentState) -> Literal["db_retriever_agent_node", "output_refiner_node"]:
+    """
+    Determines whether to continue reflection loop or end.
+    """
+    if state.get("medical_agent_needs_info", False):
+        return "db_retriever_agent_node"
+    return "output_refiner_node"
+
+
+def input_image_classification_route(state: AgentState):
+    full_images_results = state["input_images_classification_results"]
+
+    for image_result in full_images_results:
+        if image_result[2] == "not_valid_image":
+            state["coming_from_validation"] = "input_image"
+            return Command(update=state, goto=["input_not_valid_fallback_node"])
+    
+    nodes_to_return = []
+    if state.get("text_images"):
+        nodes_to_return.append("extract_text_from_images_node")
+
+    if state.get("medical_images"):
+        nodes_to_return.append("medical_vision_models_agent_node")
+
+    if state.get("input_prompt") and not state.get("text_images"):
+        nodes_to_return.append("numerical_models_agent_node")
+
+    return Command(
+        update={
+            "input_images_classification_results": state["input_images_classification_results"],
+            "text_images": state.get("text_images"),
+            "medical_images": state.get("medical_images")
+        },
+        goto=nodes_to_return
+    )
+
+
+def second_input_validation_route(state: AgentState):
+    full_validation_results = state["extracted_text_from_images_or_attachments_validation_results"]
+    
+    for validation_result in full_validation_results:
+        if validation_result != "TEXT_VALID":
+            state["coming_from_validation"] = "second_input_text"
+            return Command(update=state, goto=["input_not_valid_fallback_node"])
+
+
+    return Command(
+    update={
+        "extracted_text_from_images_or_attachments_validation_results": state["extracted_text_from_images_or_attachments_validation_results"]
+    },
+    goto=["numerical_models_agent_node"]
+    )
+
+
+
+workflow = StateGraph(AgentState)
+
+
+workflow.add_node("first_input_validation_node", first_input_validation_node)
+workflow.add_node("input_not_valid_fallback_node", input_not_valid_fallback_node)
+workflow.add_node("input_image_classification_node", input_image_classification_node)
+workflow.add_node("second_input_validation_node", second_input_validation_node)
+workflow.add_node("extract_text_from_images_node", extract_text_from_images_node)
+workflow.add_node("extract_text_from_files_node", extract_text_from_files_node)
+workflow.add_node("numerical_models_agent_node", numerical_models_agent_node)
+workflow.add_node("medical_vision_models_agent_node", medical_vision_models_agent_node)
+workflow.add_node("output_refiner_node", output_refiner_node)
+
+workflow.add_node("models_agents_output_aggregator_node", models_agents_output_aggregator_node)
+workflow.add_node("db_retriever_agent_node", db_retriever_agent_node)
+workflow.add_node("medical_agent_node", medical_agent_node)
+
+
+workflow.add_edge(["extract_text_from_images_node", "extract_text_from_files_node"], "second_input_validation_node")
+
+workflow.add_edge(["numerical_models_agent_node", "medical_vision_models_agent_node"], "models_agents_output_aggregator_node")
+workflow.add_edge("models_agents_output_aggregator_node", "db_retriever_agent_node")
+workflow.add_edge("db_retriever_agent_node", "medical_agent_node")
+
+workflow.add_edge("medical_agent_node", "output_refiner_node")
+workflow.add_edge("output_refiner_node", END)
+
+
+workflow.add_conditional_edges(
+    "medical_agent_node",
+    should_continue_reflection,
+    {
+        "db_retriever_agent_node": "db_retriever_agent_node",
+        "output_refiner_node": "output_refiner_node"
+    }
+)
+
+
+
+workflow.set_entry_point("first_input_validation_node")
+app = workflow.compile()
+
+def run_workflow(initial_state):
+    returned_state = app.invoke(initial_state)
+    return returned_state
