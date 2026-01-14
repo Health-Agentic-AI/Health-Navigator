@@ -7,6 +7,8 @@ from langchain_community.agent_toolkits import SQLDatabaseToolkit
 from langchain_core.tools import tool
 from langchain.agents import create_agent
 from langgraph.types import interrupt
+from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeoutError
+import functools
 import time 
 
 import sys
@@ -133,7 +135,7 @@ def ask_user_for_info(request: str) -> str:
 # Helpers for lazy loading
 def get_llm():
     return ChatGoogleGenerativeAI(
-        model="gemini-3-pro-preview",
+        model="gemini-3-flash-preview",
         google_api_key=os.environ.get("GOOGLE_API_KEY"),
         name="Information Retriever Agent"
     )
@@ -178,11 +180,19 @@ DB_RETRIEVER_SYSTEM_PROMPT = """You are a Medical Information Retrieval Speciali
 - Clarification needed
 - Family history not in records
 
+## Query Efficiency Rules:
+- Make SPECIFIC, targeted queries - not broad exploratory queries
+- After 2-4 database queries, you should have enough context to decide if user input is needed
+- Do NOT repeatedly query the same data with slight variations
+- If you've already retrieved medical history, lab results, and medications - that's comprehensive
+- Better to ask user for missing details than keep searching databases
+
 ## Workflow:
-1. Start by querying databases for available information (filtering by user_id: "{user_id}")
-2. Use ask_user_for_info tool if critical information is missing
-3. Continue until you have comprehensive information
-4. When complete, respond with:
+1. Make 1-3 targeted database queries (SQL and/or Vector DB) to find relevant information
+2. If you find sufficient information OR have made 3+ queries, proceed to step 3
+3. If critical information is still missing after database queries, use ask_user_for_info ONCE or TWICE to gather necessary details 
+4. After getting user response OR if no critical info is missing, respond with:
+
 ```
 INFORMATION_COMPLETE
 
@@ -224,77 +234,126 @@ def invoke_db_retriever_agent(
     Returns:
         dict with keys: 'response', 'conversation_history', 'needs_more_info'
     """
-    # Lazy load tools/resources
-    llm = get_llm()
-    sql_db = get_sql_db()
+    def _run_agent():
+        llm = get_llm()
+        sql_db = get_sql_db()
+        print(f"DEBUG: SQL DB connection successful: {sql_db is not None}")
 
-    if not sql_db:
-        # Fallback if DB not available (e.g. build time) or throw error
-        # Assuming for now we want to proceed or crash
-        pass
+        if not sql_db:
+            raise Exception("SQL Database connection failed")
 
-    sql_toolkit = SQLDatabaseToolkit(db=sql_db, llm=llm)
-    sql_tools = sql_toolkit.get_tools()
+        sql_toolkit = SQLDatabaseToolkit(db=sql_db, llm=llm)
+        sql_tools = sql_toolkit.get_tools()
 
-    # Combine SQL tools with vector DB tools
-    all_tools = sql_tools + [retrieve_from_vector_db, add_to_vector_db, ask_user_for_info]
+        print(f"DEBUG: Number of SQL tools: {len(sql_tools)}")
+        print(f"DEBUG: Number of total tools: {len(sql_tools) + 3}")
 
-    # Build initial query context
-    if info_request:
-        query_context = f"""
-        Initial Medical Analysis Context:
-        {aggregated_output}
+        all_tools = sql_tools + [retrieve_from_vector_db, add_to_vector_db, ask_user_for_info]
+
+        if info_request:
+            query_context = f"""
+            Initial Medical Analysis Context:
+            {aggregated_output}
+            
+            Medical Agent's Information Request:
+            {info_request}
+            
+            Task: Retrieve the specific information requested by the Medical Agent for User ID: {user_id}.
+            Determine if this information exists in databases or needs to be obtained from the user.
+            """
+        else:
+            query_context = f"""
+            Medical Analysis Context:
+            {aggregated_output}
+            
+            Task: Gather comprehensive patient information from all available databases
+            to support medical assessment for User ID: {user_id}.
+            """
         
-        Medical Agent's Information Request:
-        {info_request}
+        date_time = time.strftime('%Y-%m-%d %H:%M:%S')
+        formatted_system_prompt = DB_RETRIEVER_SYSTEM_PROMPT.format(
+            reflection_count=reflection_count,
+            max_reflections=max_reflections,
+            date_time=date_time,
+            user_id=user_id
+        )
         
-        Task: Retrieve the specific information requested by the Medical Agent for User ID: {user_id}.
-        Determine if this information exists in databases or needs to be obtained from the user.
-        """
-    else:
-        query_context = f"""
-        Medical Analysis Context:
-        {aggregated_output}
+        retriever_agent = create_agent(
+            llm,
+            tools=all_tools,
+            system_prompt=formatted_system_prompt,
+            max_iterations=10
+        )
+
+        agent_input = {
+            "messages": conversation_history + [
+                HumanMessage(content=query_context)
+            ]
+        }
         
-        Task: Gather comprehensive patient information from all available databases
-        to support medical assessment for User ID: {user_id}.
-        """
-    date_time = time.strftime('%Y-%m-%d %H:%M:%S')
-    # Format system prompt with current iteration info AND user_id
-    formatted_system_prompt = DB_RETRIEVER_SYSTEM_PROMPT.format(
-        reflection_count=reflection_count,
-        max_reflections=max_reflections,
-        date_time=date_time,
-        user_id=user_id
-    )
-    
-    retriever_agent = create_agent(
-        llm,
-        tools=all_tools,
-        system_prompt=formatted_system_prompt
-    )
-    # Prepare messages for agent
-    agent_input = {
-        "messages": conversation_history + [
-            HumanMessage(content=query_context)
-        ]
-    }
-    
-    # Invoke agent
+        print(f"DEBUG: About to invoke retriever agent...")
+        print(f"DEBUG: Agent input messages count: {len(agent_input['messages'])}")
+
+        result = retriever_agent.invoke(agent_input)
+
+        print(f"DEBUG: Agent returned successfully")
+        print(f"DEBUG: Result message count: {len(result['messages'])}")
+        
+        return result
+
     print(f"\n--- Information Retriever Agent Invoked ---")
-    print(f"DEBUG: Query Context: {query_context[:200]}...")
-
-    result = retriever_agent.invoke(agent_input)
-    agent_response = result["messages"][-1].content
+    print(f"DEBUG: Query Context: {(aggregated_output[:200] if aggregated_output else 'None')}...")
     
-    # Determine if information is complete
+    # Run with timeout
+    with ThreadPoolExecutor(max_workers=1) as executor:
+        future = executor.submit(_run_agent)
+        try:
+            result = future.result(timeout=30)  # 30 second timeout
+        except FuturesTimeoutError:
+            print("ERROR: DB Retriever Agent timed out after 30 seconds")
+            # Return what we have from aggregated output
+            timeout_response = f"""INFORMATION_COMPLETE
+
+        **VECTOR DATABASE RESULTS:**
+        Query timed out - using information from previous analysis.
+
+        **RELATIONAL DATABASE RESULTS:**
+        Query timed out - using information from previous analysis.
+
+        **USER PROVIDED INFORMATION:**
+        None
+
+        **SUMMARY:** Database retrieval exceeded time limit. Proceeding with information from initial analysis: {aggregated_output[:500]}..."""
+            
+            return {
+                'response': [{'text': timeout_response}],
+                'conversation_history': conversation_history,
+                'needs_more_info': False
+            }
+        except Exception as e:
+            print(f"ERROR: DB Retriever Agent failed: {e}")
+            import traceback
+            traceback.print_exc()
+            return {
+                'response': [{'text': f'INFORMATION_COMPLETE\n\nDatabase error: {str(e)}'}],
+                'conversation_history': conversation_history,
+                'needs_more_info': False
+            }
+    
+    # Extract content properly
+    last_message = result["messages"][-1]
+    if isinstance(last_message.content, list):
+        agent_response = last_message.content[0].get('text', str(last_message.content))
+    else:
+        agent_response = str(last_message.content)
+    
     needs_more_info = "INFORMATION_COMPLETE" not in agent_response
     
     print(f"DEBUG: Retriever Agent Response: {agent_response[:200]}...")
     print(f"DEBUG: Needs More Info: {needs_more_info}")
 
     return {
-        'response': agent_response,
+        'response': [{'text': agent_response}],
         'conversation_history': result["messages"],
         'needs_more_info': needs_more_info
     }

@@ -96,7 +96,7 @@ You are an AI assistant supporting healthcare decisions, not replacing healthcar
 
 
 llm = ChatGoogleGenerativeAI(
-    model="gemini-3-pro-preview",
+    model="gemini-3-flash-preview",
     google_api_key=os.environ["GOOGLE_API_KEY"],
     name="Medical Agent"
     )
@@ -148,11 +148,17 @@ def invoke_medical_agent(
     ]
     
     response = llm.invoke(messages)
-    agent_response = response.content
+    
+    # Extract content properly
+    if isinstance(response.content, list):
+        agent_response = response.content[0].get('text', str(response.content))
+    else:
+        agent_response = str(response.content)
+    
     print(f"DEBUG: Medical Agent Response: {agent_response[:200]}...")
     
     # Update conversation history
-    updated_history = conversation_history + [response.content[0]['text']]
+    updated_history = conversation_history + [agent_response]
     
     # Check if agent needs more information
     needs_more_info = False
@@ -165,7 +171,7 @@ def invoke_medical_agent(
         needs_more_info = True
     
     return {
-        'response': agent_response,
+        'response': [{'text': agent_response}],
         'conversation_history': updated_history,
         'needs_more_info': needs_more_info,
         'info_request': info_request
