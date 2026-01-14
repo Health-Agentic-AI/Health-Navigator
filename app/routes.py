@@ -168,6 +168,9 @@ def send_message():
         conversation_id = conversation.id
     else:
         conversation = Conversation.query.get(conversation_id)
+        # Security Check: Ensure the conversation belongs to the logged-in user
+        if not conversation or conversation.user_id != user.id:
+            return jsonify({'error': 'Forbidden: You do not own this conversation'}), 403
 
     # Create User Message
     user_msg = Message(
@@ -273,6 +276,9 @@ def send_message():
             return jsonify({'error': 'Workflow error during resume'}), 500
 
     else:
+        print("="*80)
+        print(f"USER ID IS: {user.id}")
+        print("="*80)
         # Start new workflow run
         initial_state = {
             "input_prompt": message,

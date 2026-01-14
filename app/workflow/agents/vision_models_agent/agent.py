@@ -265,6 +265,7 @@ Note: be accurate about the image path and pass it exactly the same.
     llm = ChatGoogleGenerativeAI(
         model="gemini-3-flash-preview",
         google_api_key=os.environ["GOOGLE_API_KEY"],
+        name="Vision Models Agent"
     )
 
     agent = create_agent(llm, tools, system_prompt=system_prompt)

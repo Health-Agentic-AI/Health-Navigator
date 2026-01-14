@@ -1,9 +1,17 @@
 import sys
 sys.path.append(r"C:\My Projects\Health-Navigator")
+import os
+
+from dotenv import load_dotenv
+load_dotenv(os.path.join(os.getcwd(), 'credentials.env'))
+
+os.environ["LANGCHAIN_TRACING_V2"]
+os.environ["LANGCHAIN_ENDPOINT"]
+os.environ["LANGCHAIN_API_KEY"]
+os.environ["LANGCHAIN_PROJECT"]
 
 from langgraph.graph import StateGraph, END
 from typing import TypedDict, List, Dict, Any
-import os
 from typing import Literal, List, Dict, Any, Annotated
 from typing_extensions import TypedDict
 from langchain_google_genai import ChatGoogleGenerativeAI
@@ -607,8 +615,9 @@ checkpointer = MemorySaver()
 app = workflow.compile(checkpointer=checkpointer)
 
 def run_workflow(initial_state, thread_id: str):
-    config = {"configurable": {"thread_id": thread_id}}
-    # We use stream or invoke. Invoke handles interrupts by stopping and saving state.
-    # The caller needs to check the state.
+    config = {
+            "configurable": {"thread_id": thread_id},
+            "metadata": {"user_id": initial_state.get("user_id"), "flow_type": "medical_analysis"} 
+        }
     returned_state = app.invoke(initial_state, config=config)
     return returned_state

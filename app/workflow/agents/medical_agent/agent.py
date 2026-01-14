@@ -98,6 +98,7 @@ You are an AI assistant supporting healthcare decisions, not replacing healthcar
 llm = ChatGoogleGenerativeAI(
     model="gemini-3-pro-preview",
     google_api_key=os.environ["GOOGLE_API_KEY"],
+    name="Medical Agent"
     )
 
 def invoke_medical_agent(

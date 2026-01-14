@@ -187,6 +187,7 @@ def get_llm():
     return ChatGoogleGenerativeAI(
         model="gemini-3-flash-preview",
         google_api_key=os.environ.get("GOOGLE_API_KEY"),
+        name="Numerical Models Agent"
     )
 
 def get_sql_db():
