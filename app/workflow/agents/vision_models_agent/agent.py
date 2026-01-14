@@ -76,10 +76,8 @@ def classify_chest_xray_tool(image_path: str) -> str:
     except Exception as e:
         return f"Error: {str(e)}"
     
-agent = None
 
-def initialize_agent():
-    global agent
+def create_vision_agent():
     # Setup agent
     tools = [classify_colon_tissue_tool, classify_chest_xray_tool]
 
@@ -268,7 +266,7 @@ Note: be accurate about the image path and pass it exactly the same.
         name="Vision Models Agent"
     )
 
-    agent = create_agent(llm, tools, system_prompt=system_prompt)
+    return create_agent(llm, tools, system_prompt=system_prompt)
 
 def invoke_agent(user_input: str) -> str:
     """
@@ -284,8 +282,7 @@ def invoke_agent(user_input: str) -> str:
     print(f"DEBUG: User Input: {user_input}")
 
 
-    if agent == None:
-        initialize_agent()
+    agent = create_vision_agent()
 
     response = agent.invoke({
         "messages": [

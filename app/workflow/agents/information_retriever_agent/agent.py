@@ -149,6 +149,12 @@ def get_sql_db():
 # DB Retriever Agent System Prompt
 DB_RETRIEVER_SYSTEM_PROMPT = """You are a Medical Information Retrieval Specialist with access to vector databases, relational databases, and the ability to request information directly from users.
 
+## CRITICAL SECURITY AND DATA PRIVACY CONTEXT
+- **CURRENT USER ID:** "{user_id}"
+- **STRICT REQUIREMENT:** You must ONLY query, retrieve, or access data belonging to this specific user_id.
+- **SQL QUERIES:** ALWAYS include `WHERE user_id = '{user_id}'` (or equivalent column) in every SQL query. Never select all rows without filtering by user.
+- **VECTOR DB:** Always pass `user_id="{user_id}"` when calling `retrieve_from_vector_db` or `add_to_vector_db`.
+
 ## Available Tools:
 - **retrieve_from_vector_db**: Search medical knowledge base and patient documents
 - **add_to_vector_db**: Store new information for future reference
@@ -173,7 +179,7 @@ DB_RETRIEVER_SYSTEM_PROMPT = """You are a Medical Information Retrieval Speciali
 - Family history not in records
 
 ## Workflow:
-1. Start by querying databases for available information
+1. Start by querying databases for available information (filtering by user_id: "{user_id}")
 2. Use ask_user_for_info tool if critical information is missing
 3. Continue until you have comprehensive information
 4. When complete, respond with:
@@ -201,7 +207,7 @@ INFORMATION_COMPLETE
 
 Current date and time: {date_time} in format YYYY-MM-DD HH:MM:SS
 
-Remember: The Medical Agent handles clinical analysis. Your role is comprehensive information retrieval."""
+Remember: The Medical Agent handles clinical analysis. Your role is comprehensive information retrieval for User: {user_id}."""
 
 
 def invoke_db_retriever_agent(
@@ -242,7 +248,7 @@ def invoke_db_retriever_agent(
         Medical Agent's Information Request:
         {info_request}
         
-        Task: Retrieve the specific information requested by the Medical Agent.
+        Task: Retrieve the specific information requested by the Medical Agent for User ID: {user_id}.
         Determine if this information exists in databases or needs to be obtained from the user.
         """
     else:
@@ -251,14 +257,15 @@ def invoke_db_retriever_agent(
         {aggregated_output}
         
         Task: Gather comprehensive patient information from all available databases
-        to support medical assessment.
+        to support medical assessment for User ID: {user_id}.
         """
     date_time = time.strftime('%Y-%m-%d %H:%M:%S')
-    # Format system prompt with current iteration info
+    # Format system prompt with current iteration info AND user_id
     formatted_system_prompt = DB_RETRIEVER_SYSTEM_PROMPT.format(
         reflection_count=reflection_count,
         max_reflections=max_reflections,
-        date_time=date_time
+        date_time=date_time,
+        user_id=user_id
     )
     
     retriever_agent = create_agent(
