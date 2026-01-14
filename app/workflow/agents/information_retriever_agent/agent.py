@@ -5,9 +5,8 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_community.utilities import SQLDatabase
 from langchain_community.agent_toolkits import SQLDatabaseToolkit
 from langchain_core.tools import tool
-from langchain.agents import create_agent
+from langgraph.prebuilt import create_react_agent
 from langgraph.types import interrupt
-from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeoutError
 import functools
 import time 
 
@@ -234,110 +233,73 @@ def invoke_db_retriever_agent(
     Returns:
         dict with keys: 'response', 'conversation_history', 'needs_more_info'
     """
-    def _run_agent():
-        llm = get_llm()
-        sql_db = get_sql_db()
-        print(f"DEBUG: SQL DB connection successful: {sql_db is not None}")
-
-        if not sql_db:
-            raise Exception("SQL Database connection failed")
-
-        sql_toolkit = SQLDatabaseToolkit(db=sql_db, llm=llm)
-        sql_tools = sql_toolkit.get_tools()
-
-        print(f"DEBUG: Number of SQL tools: {len(sql_tools)}")
-        print(f"DEBUG: Number of total tools: {len(sql_tools) + 3}")
-
-        all_tools = sql_tools + [retrieve_from_vector_db, add_to_vector_db, ask_user_for_info]
-
-        if info_request:
-            query_context = f"""
-            Initial Medical Analysis Context:
-            {aggregated_output}
-            
-            Medical Agent's Information Request:
-            {info_request}
-            
-            Task: Retrieve the specific information requested by the Medical Agent for User ID: {user_id}.
-            Determine if this information exists in databases or needs to be obtained from the user.
-            """
-        else:
-            query_context = f"""
-            Medical Analysis Context:
-            {aggregated_output}
-            
-            Task: Gather comprehensive patient information from all available databases
-            to support medical assessment for User ID: {user_id}.
-            """
-        
-        date_time = time.strftime('%Y-%m-%d %H:%M:%S')
-        formatted_system_prompt = DB_RETRIEVER_SYSTEM_PROMPT.format(
-            reflection_count=reflection_count,
-            max_reflections=max_reflections,
-            date_time=date_time,
-            user_id=user_id
-        )
-        
-        retriever_agent = create_agent(
-            llm,
-            tools=all_tools,
-            system_prompt=formatted_system_prompt,
-        )
-
-        agent_input = {
-            "messages": conversation_history + [
-                HumanMessage(content=query_context)
-            ]
-        }
-        
-        print(f"DEBUG: About to invoke retriever agent...")
-        print(f"DEBUG: Agent input messages count: {len(agent_input['messages'])}")
-
-        result = retriever_agent.invoke(agent_input, config={"recursion_limit": 10})
-
-        print(f"DEBUG: Agent returned successfully")
-        print(f"DEBUG: Result message count: {len(result['messages'])}")
-        
-        return result
-
     print(f"\n--- Information Retriever Agent Invoked ---")
     print(f"DEBUG: Query Context: {(aggregated_output[:200] if aggregated_output else 'None')}...")
+
+    llm = get_llm()
+    sql_db = get_sql_db()
+    print(f"DEBUG: SQL DB connection successful: {sql_db is not None}")
+
+    if not sql_db:
+        raise Exception("SQL Database connection failed")
+
+    sql_toolkit = SQLDatabaseToolkit(db=sql_db, llm=llm)
+    sql_tools = sql_toolkit.get_tools()
+
+    print(f"DEBUG: Number of SQL tools: {len(sql_tools)}")
+    print(f"DEBUG: Number of total tools: {len(sql_tools) + 3}")
+
+    all_tools = sql_tools + [retrieve_from_vector_db, add_to_vector_db, ask_user_for_info]
+
+    if info_request:
+        query_context = f"""
+        Initial Medical Analysis Context:
+        {aggregated_output}
+        
+        Medical Agent's Information Request:
+        {info_request}
+        
+        Task: Retrieve the specific information requested by the Medical Agent for User ID: {user_id}.
+        Determine if this information exists in databases or needs to be obtained from the user.
+        """
+    else:
+        query_context = f"""
+        Medical Analysis Context:
+        {aggregated_output}
+
+        Task: Gather comprehensive patient information from all available databases
+        to support medical assessment for User ID: {user_id}.
+        """
     
-    # Run with timeout
-    with ThreadPoolExecutor(max_workers=1) as executor:
-        future = executor.submit(_run_agent)
-        try:
-            result = future.result(timeout=30)  # 30 second timeout
-        except FuturesTimeoutError:
-            print("ERROR: DB Retriever Agent timed out after 30 seconds")
-            # Return what we have from aggregated output
-            timeout_response = f"""INFORMATION_COMPLETE
+    date_time = time.strftime('%Y-%m-%d %H:%M:%S')
+    formatted_system_prompt = DB_RETRIEVER_SYSTEM_PROMPT.format(
+        reflection_count=reflection_count,
+        max_reflections=max_reflections,
+        date_time=date_time,
+        user_id=user_id
+    )
 
-        **VECTOR DATABASE RESULTS:**
-        Query timed out - using information from previous analysis.
+    # Use langgraph's prebuilt agent which handles interrupts correctly
+    retriever_agent = create_react_agent(
+        llm,
+        tools=all_tools,
+        state_modifier=formatted_system_prompt,
+    )
 
-        **RELATIONAL DATABASE RESULTS:**
-        Query timed out - using information from previous analysis.
+    agent_input = {
+        "messages": conversation_history + [
+            HumanMessage(content=query_context)
+        ]
+    }
 
-        **USER PROVIDED INFORMATION:**
-        None
+    print(f"DEBUG: About to invoke retriever agent...")
+    print(f"DEBUG: Agent input messages count: {len(agent_input['messages'])}")
 
-        **SUMMARY:** Database retrieval exceeded time limit. Proceeding with information from initial analysis: {aggregated_output[:500]}..."""
-            
-            return {
-                'response': [{'text': timeout_response}],
-                'conversation_history': conversation_history,
-                'needs_more_info': False
-            }
-        except Exception as e:
-            print(f"ERROR: DB Retriever Agent failed: {e}")
-            import traceback
-            traceback.print_exc()
-            return {
-                'response': [{'text': f'INFORMATION_COMPLETE\n\nDatabase error: {str(e)}'}],
-                'conversation_history': conversation_history,
-                'needs_more_info': False
-            }
+    # Run directly in the main thread so 'interrupt' (GraphInterrupt) can bubble up
+    result = retriever_agent.invoke(agent_input, config={"recursion_limit": 10})
+
+    print(f"DEBUG: Agent returned successfully")
+    print(f"DEBUG: Result message count: {len(result['messages'])}")
     
     # Extract content properly
     last_message = result["messages"][-1]
