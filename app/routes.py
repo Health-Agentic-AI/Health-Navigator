@@ -141,12 +141,37 @@ def send_message():
 
     # Handle file uploads
     uploaded_files = {} # filename -> path
-    if request.files:
+
+    # Get all files with the key 'files' (from frontend FormData)
+    files = request.files.getlist('files')
+
+    if files:
+        if len(files) > 20:
+             return jsonify({'error': 'Too many files. Maximum 20 allowed.'}), 400
+
         upload_folder = os.path.join(current_app.root_path, 'static', 'uploads', str(user.id))
         os.makedirs(upload_folder, exist_ok=True)
 
-        for key, file in request.files.items():
-            if file and allowed_file(file.filename):
+        for file in files:
+            # Skip empty file inputs
+            if not file or not file.filename:
+                continue
+
+            if allowed_file(file.filename):
+                # Check size (10MB) - basic check before saving
+                # Note: Flask does not read the full file into memory immediately if it's large,
+                # but accessing content_length or seeking end is needed.
+                # Content-Length header is for the whole request, so we check individually if possible.
+                # Here we just read content length if available or seek.
+
+                # Check file size safely
+                file.seek(0, os.SEEK_END)
+                file_length = file.tell()
+                file.seek(0)
+
+                if file_length > 10 * 1024 * 1024:
+                    return jsonify({'error': f'File {file.filename} is too large. Max 10MB.'}), 400
+
                 filename = secure_filename(file.filename)
                 file_path = os.path.join(upload_folder, filename)
                 file.save(file_path)

@@ -7,14 +7,19 @@ document.addEventListener('DOMContentLoaded', function () {
     const currentConvIdInput = document.getElementById('current-conversation-id');
     const attachmentBtn = document.getElementById('attachment-btn');
     const fileInput = document.getElementById('file-input');
-    const filePreview = document.getElementById('file-preview');
+    const fileStagingArea = document.getElementById('file-staging-area');
     const emptyState = document.getElementById('empty-state');
     const interruptionAlert = document.getElementById('interruption-alert');
     const questionText = document.getElementById('question-text');
     const statusBadge = document.getElementById('status-badge');
 
+    // State for staged files
+    // Array of { id: string, file: File, customName: string, ext: string }
+    let stagedFiles = [];
+
     // --- Markdown Parser ---
     function parseMarkdown(text) {
+        if (!text) return '';
         let html = text;
 
         // Escape HTML
@@ -22,52 +27,107 @@ document.addEventListener('DOMContentLoaded', function () {
             .replace(/</g, '&lt;')
             .replace(/>/g, '&gt;');
 
-        // Headers (## and ###)
-        html = html.replace(/^### (.+)$/gm, '<h3 class="mt-3 mb-2">$1</h3>');
-        html = html.replace(/^## (.+)$/gm, '<h2 class="mt-4 mb-3">$1</h2>');
+        // Headers
+        html = html.replace(/^### (.+)$/gm, '<h3>$1</h3>');
+        html = html.replace(/^## (.+)$/gm, '<h2>$1</h2>');
 
-        // Bold (**text**)
+        // Bold
         html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
 
-        // Horizontal rules (***)
-        html = html.replace(/^\*\*\*$/gm, '<hr class="my-3">');
-        html = html.replace(/^---$/gm, '<hr class="my-3">');
+        // Horizontal rules
+        html = html.replace(/^\*\*\*$/gm, '<hr>');
+        html = html.replace(/^---$/gm, '<hr>');
 
-        // Bullet lists (lines starting with * or -)
+        // Lists
         html = html.replace(/^\* (.+)$/gm, '<li>$1</li>');
         html = html.replace(/^- (.+)$/gm, '<li>$1</li>');
+        html = html.replace(/(<li>.*<\/li>\n?)+/g, match => `<ul>${match}</ul>`);
 
-        // Wrap consecutive <li> in <ul>
-        html = html.replace(/(<li>.*<\/li>\n?)+/g, function (match) {
-            return '<ul class="mb-2">' + match + '</ul>';
-        });
+        // Paragraphs
+        html = html.replace(/\n\n+/g, '</p><p>');
+        html = '<p>' + html + '</p>';
 
-        // Paragraphs (double newlines)
-        html = html.replace(/\n\n+/g, '</p><p class="mb-2">');
-        html = '<p class="mb-2">' + html + '</p>';
-
-        // Single newlines to <br>
+        // Line breaks
         html = html.replace(/\n/g, '<br>');
 
-        // Clean up empty paragraphs
-        html = html.replace(/<p class="mb-2"><\/p>/g, '');
+        // Cleanup
+        html = html.replace(/<p><\/p>/g, '');
 
         return html;
     }
 
-    // --- Event Listeners ---
+    // --- File Handling Functions ---
 
     attachmentBtn.addEventListener('click', () => fileInput.click());
 
     fileInput.addEventListener('change', () => {
-        filePreview.innerHTML = '';
-        Array.from(fileInput.files).forEach(file => {
-            const badge = document.createElement('span');
-            badge.className = 'badge bg-secondary me-1';
-            badge.textContent = file.name;
-            filePreview.appendChild(badge);
+        const files = Array.from(fileInput.files);
+        if (files.length === 0) return;
+
+        files.forEach(file => {
+            // Check limits (example: max 20 files total, max 10MB each)
+            if (stagedFiles.length >= 20) {
+                alert('Maximum 20 files allowed.');
+                return;
+            }
+            if (file.size > 10 * 1024 * 1024) {
+                alert(`File ${file.name} is too large (Max 10MB).`);
+                return;
+            }
+
+            const lastDotIndex = file.name.lastIndexOf('.');
+            const name = lastDotIndex !== -1 ? file.name.substring(0, lastDotIndex) : file.name;
+            const ext = lastDotIndex !== -1 ? file.name.substring(lastDotIndex) : '';
+
+            const fileObj = {
+                id: Math.random().toString(36).substring(7),
+                file: file,
+                customName: name,
+                ext: ext
+            };
+
+            stagedFiles.push(fileObj);
         });
+
+        renderStagedFiles();
+
+        // Reset input so same file can be selected again
+        fileInput.value = '';
     });
+
+    function renderStagedFiles() {
+        fileStagingArea.innerHTML = '';
+
+        stagedFiles.forEach(fileObj => {
+            const el = document.createElement('div');
+            el.className = 'staged-file';
+            el.innerHTML = `
+                <i class="bi bi-file-earmark-text staged-file-icon"></i>
+                <div class="staged-file-info">
+                    <input type="text" class="staged-file-input" value="${fileObj.customName}" placeholder="Filename">
+                    <span class="staged-file-ext">${fileObj.ext}</span>
+                </div>
+                <i class="bi bi-x staged-file-remove" data-id="${fileObj.id}"></i>
+            `;
+
+            // Handle rename
+            const input = el.querySelector('input');
+            input.addEventListener('input', (e) => {
+                fileObj.customName = e.target.value.trim();
+            });
+
+            // Handle remove
+            const removeBtn = el.querySelector('.staged-file-remove');
+            removeBtn.addEventListener('click', () => {
+                stagedFiles = stagedFiles.filter(f => f.id !== fileObj.id);
+                renderStagedFiles();
+            });
+
+            fileStagingArea.appendChild(el);
+        });
+    }
+
+    // --- Chat Logic ---
 
     newChatBtn.addEventListener('click', () => {
         currentConvIdInput.value = '';
@@ -77,45 +137,74 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('chat-title').textContent = 'New Consultation';
         interruptionAlert.classList.add('d-none');
         statusBadge.textContent = 'Ready';
-        statusBadge.className = 'badge bg-info text-dark';
+        statusBadge.className = 'badge bg-secondary rounded-pill';
 
         document.querySelectorAll('.conversation-item').forEach(el => el.classList.remove('active'));
+        stagedFiles = [];
+        renderStagedFiles();
     });
 
-    document.querySelectorAll('.conversation-item').forEach(item => {
-        item.addEventListener('click', (e) => {
+    // Handle Conversation Click
+    // Use event delegation for dynamically added items if needed,
+    // but here we just attach to existing ones on load.
+    // Ideally, if we add new convs dynamically, we should refactor this.
+    // For now, let's keep it simple.
+    document.getElementById('conversation-list').addEventListener('click', (e) => {
+        const item = e.target.closest('.conversation-item');
+        if (item) {
             e.preventDefault();
             const id = item.dataset.id;
             loadConversation(id);
 
             document.querySelectorAll('.conversation-item').forEach(el => el.classList.remove('active'));
             item.classList.add('active');
-        });
+        }
     });
 
     chatForm.addEventListener('submit', async (e) => {
         e.preventDefault();
 
         const message = messageInput.value.trim();
-        const files = fileInput.files;
 
-        if (!message && files.length === 0) return;
+        if (!message && stagedFiles.length === 0) return;
 
+        // Optimistic UI Update
         if (message) {
             appendMessage('user', message);
         }
+        if (stagedFiles.length > 0) {
+            const fileNames = stagedFiles.map(f => f.customName + f.ext).join(', ');
+            appendMessage('user', `*Attached files: ${fileNames}*`);
+        }
 
-        const formData = new FormData(chatForm);
+        const formData = new FormData();
+        formData.append('message', message);
 
+        const convId = currentConvIdInput.value;
+        if (convId) {
+            formData.append('conversation_id', convId);
+        }
+
+        // Append files with renamed titles
+        stagedFiles.forEach(f => {
+            const finalName = (f.customName || 'file') + f.ext;
+            formData.append('files', f.file, finalName);
+        });
+
+        // Clear input
         messageInput.value = '';
-        fileInput.value = '';
-        filePreview.innerHTML = '';
+        stagedFiles = [];
+        renderStagedFiles();
 
         if (emptyState) emptyState.style.display = 'none';
 
         statusBadge.textContent = 'Processing...';
-        statusBadge.className = 'badge bg-warning text-dark';
+        statusBadge.className = 'badge bg-warning text-dark rounded-pill';
         interruptionAlert.classList.add('d-none');
+
+        // Disable input while processing? Maybe just button.
+        const submitBtn = chatForm.querySelector('button[type="submit"]');
+        submitBtn.disabled = true;
 
         try {
             const response = await fetch('/api/chat/message', {
@@ -129,7 +218,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (data.status === 'completed') {
                     appendMessage('assistant', data.response);
                     statusBadge.textContent = 'Completed';
-                    statusBadge.className = 'badge bg-success';
+                    statusBadge.className = 'badge bg-success rounded-pill';
                 } else if (data.status === 'interrupted') {
                     appendMessage('system_question', data.question);
                     interruptionAlert.classList.remove('d-none');
@@ -138,26 +227,27 @@ document.addEventListener('DOMContentLoaded', function () {
                     messageInput.focus();
 
                     statusBadge.textContent = 'Waiting for input';
-                    statusBadge.className = 'badge bg-danger';
+                    statusBadge.className = 'badge bg-danger rounded-pill';
                 }
 
                 if (data.conversation_id) {
                     currentConvIdInput.value = data.conversation_id;
+                    // Ideally, refresh sidebar here to show new conv or update timestamp
                 }
             } else {
                 appendMessage('error', data.error || 'An error occurred.');
                 statusBadge.textContent = 'Error';
-                statusBadge.className = 'badge bg-danger';
+                statusBadge.className = 'badge bg-danger rounded-pill';
             }
         } catch (error) {
             console.error('Error:', error);
             appendMessage('error', 'Network error. Please try again.');
             statusBadge.textContent = 'Error';
-            statusBadge.className = 'badge bg-danger';
+            statusBadge.className = 'badge bg-danger rounded-pill';
+        } finally {
+            submitBtn.disabled = false;
         }
     });
-
-    // --- Helper Functions ---
 
     async function loadConversation(id) {
         try {
@@ -172,9 +262,14 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (data.messages && data.messages.length > 0) {
                     data.messages.forEach(msg => {
                         appendMessage(msg.role, msg.content);
+                        if (msg.attachments && msg.attachments.length > 0) {
+                           // Could append a separate message or info about attachments
+                           // For now, let's assume content covers it or user remembers
+                        }
                     });
                 } else {
                     chatMessages.appendChild(emptyState);
+                    emptyState.style.display = 'block';
                 }
 
                 const lastMsg = data.messages[data.messages.length - 1];
@@ -182,12 +277,15 @@ document.addEventListener('DOMContentLoaded', function () {
                     interruptionAlert.classList.remove('d-none');
                     questionText.textContent = lastMsg.content;
                     statusBadge.textContent = 'Waiting for input';
-                    statusBadge.className = 'badge bg-danger';
+                    statusBadge.className = 'badge bg-danger rounded-pill';
                 } else {
                     interruptionAlert.classList.add('d-none');
                     statusBadge.textContent = 'Ready';
-                    statusBadge.className = 'badge bg-info text-dark';
+                    statusBadge.className = 'badge bg-secondary rounded-pill';
                 }
+
+                // Scroll to bottom
+                chatMessages.scrollTop = chatMessages.scrollHeight;
             }
         } catch (err) {
             console.error(err);
@@ -195,27 +293,30 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function appendMessage(role, content) {
-        const msgDiv = document.createElement('div');
-        msgDiv.className = `d-flex mb-3 ${role === 'user' ? 'justify-content-end' : 'justify-content-start'}`;
+        // Wrapper
+        const wrapper = document.createElement('div');
+        wrapper.className = `message-wrapper ${role}`;
 
-        let cardClass = role === 'user' ? 'bg-primary text-white' : 'bg-white border';
-        if (role === 'system_question') cardClass = 'bg-warning text-dark';
-        if (role === 'error') cardClass = 'bg-danger text-white';
+        // Card
+        const card = document.createElement('div');
+        card.className = 'message-card';
 
-        // Apply markdown parsing for assistant messages
-        const formattedContent = (role === 'assistant')
-            ? parseMarkdown(content)
-            : content.replace(/\n/g, '<br>');
+        // Body
+        const body = document.createElement('div');
+        body.className = 'message-body';
 
-        msgDiv.innerHTML = `
-            <div class="card ${cardClass}" style="max-width: 75%;">
-                <div class="card-body p-3">
-                    ${formattedContent}
-                </div>
-            </div>
-        `;
+        // Content
+        if (role === 'assistant') {
+            body.innerHTML = parseMarkdown(content);
+        } else {
+            body.innerHTML = content.replace(/\n/g, '<br>');
+        }
 
-        chatMessages.appendChild(msgDiv);
+        card.appendChild(body);
+        wrapper.appendChild(card);
+        chatMessages.appendChild(wrapper);
+
         chatMessages.scrollTop = chatMessages.scrollHeight;
     }
+
 });

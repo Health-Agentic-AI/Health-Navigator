@@ -1,141 +1,114 @@
 {% extends "base.html" %}
 
 {% block content %}
-<style>
-    /* Styling for formatted assistant messages */
-    .card-body h2 {
-        font-size: 1.3rem;
-        font-weight: 600;
-        color: #2c3e50;
-        border-bottom: 2px solid #3498db;
-        padding-bottom: 0.3rem;
-    }
+<div class="app-container">
 
-    .card-body h3 {
-        font-size: 1.1rem;
-        font-weight: 600;
-        color: #34495e;
-    }
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 fw-semibold text-secondary">Consultations</h5>
+            <button id="new-chat-btn" class="btn btn-primary btn-sm rounded-pill px-3">
+                <i class="bi bi-plus-lg me-1"></i> New
+            </button>
+        </div>
 
-    .card-body ul {
-        padding-left: 1.5rem;
-    }
+        <div id="conversation-list" class="conversation-list">
+            {% for conv in conversations %}
+            <div class="conversation-item" data-id="{{ conv.id }}">
+                <div class="d-flex w-100 justify-content-between align-items-center">
+                    <h6 class="text-truncate" style="max-width: 80%;">{{ conv.title }}</h6>
+                </div>
+                <small>{{ conv.last_updated_at.strftime('%b %d, %Y') }}</small>
+            </div>
+            {% endfor %}
+        </div>
 
-    .card-body li {
-        margin-bottom: 0.3rem;
-    }
+        <div class="sidebar-footer">
+            <div class="d-flex align-items-center gap-3">
+                <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold shadow-sm"
+                    style="width: 40px; height: 40px; font-size: 1.1rem;">
+                    {{ user.full_name[0].upper() }}
+                </div>
+                <div class="overflow-hidden">
+                    <div class="fw-semibold text-truncate">{{ user.full_name }}</div>
+                    <small class="text-muted d-block text-truncate">Patient Account</small>
+                </div>
+            </div>
+        </div>
+    </aside>
 
-    .card-body hr {
-        border-top: 1px solid #bdc3c7;
-    }
+    <!-- Main Chat Area -->
+    <main class="chat-area">
 
-    .card-body p {
-        margin-bottom: 0.5rem;
-        line-height: 1.5;
-    }
-
-    .card-body strong {
-        font-weight: 600;
-        color: #2c3e50;
-    }
-</style>
-
-<div class="container-fluid h-100">
-    <div class="row h-100">
-
-        <!-- Sidebar -->
-        <div class="col-md-3 bg-light border-end p-3">
-
-            <div class="mb-3">
-                <button id="new-chat-btn" class="btn btn-primary w-100">
-                    + New Consultation
+        <!-- Chat Header -->
+        <div class="chat-header">
+            <div class="d-flex align-items-center gap-3">
+                <button class="btn btn-light d-md-none border" type="button" data-bs-toggle="collapse" data-bs-target="#sidebar">
+                    <i class="bi bi-list"></i>
                 </button>
-            </div>
-
-            <div id="conversation-list" class="list-group">
-                {% for conv in conversations %}
-                <a href="#" class="conversation-item list-group-item list-group-item-action" data-id="{{ conv.id }}">
-                    <div class="d-flex w-100 justify-content-between">
-                        <h6 class="mb-1">{{ conv.title }}</h6>
-                    </div>
-                    <small>{{ conv.last_updated_at.strftime('%Y-%m-%d') }}</small>
-                </a>
-                {% endfor %}
-            </div>
-
-            <div class="mt-auto pt-3 border-top">
-                <div class="d-flex align-items-center">
-                    <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center"
-                        style="width: 40px; height: 40px;">
-                        {{ user.full_name[0].upper() }}
-                    </div>
-                    <div class="ms-2">
-                        <div class="fw-bold">{{ user.full_name }}</div>
-                        <small class="text-muted">Patient Profile</small>
-                    </div>
+                <div class="chat-title">
+                    <h4 id="chat-title">New Consultation</h4>
+                    <span id="status-badge" class="badge bg-secondary rounded-pill fw-normal mt-1" style="font-size: 0.7rem;">Ready</span>
                 </div>
             </div>
-
         </div>
 
-        <!-- Main Chat Area -->
-        <div class="col-md-9 d-flex flex-column">
-
-            <!-- Header -->
-            <div class="border-bottom p-3 bg-white">
-                <div class="d-flex justify-content-between align-items-center">
-                    <h4 id="chat-title" class="mb-0">New Consultation</h4>
-                    <span id="status-badge" class="badge bg-info text-dark">Ready</span>
+        <!-- Messages -->
+        <div id="chat-messages" class="chat-messages">
+            <div id="empty-state" class="empty-state">
+                <div class="empty-state-icon shadow-sm">
+                    <i class="bi bi-chat-heart" style="font-size: 2rem;"></i>
                 </div>
+                <h3 class="fw-bold text-dark mb-2">Welcome to Health Navigator</h3>
+                <p class="text-muted" style="max-width: 400px; margin: 0 auto;">
+                    Start a new medical consultation by describing your symptoms. You can also upload medical reports or images for analysis.
+                </p>
             </div>
-
-            <!-- Messages Container -->
-            <div id="chat-messages" class="flex-grow-1 p-3 overflow-auto">
-
-                <div id="empty-state" class="text-center text-muted mt-5">
-                    <div class="mb-3">
-                        <svg width="64" height="64" fill="currentColor" class="bi bi-chat-dots" viewBox="0 0 16 16">
-                            <path
-                                d="M5 8a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm4 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm3 1a1 1 0 1 0 0-2 1 1 0 0 0 0 2z" />
-                            <path
-                                d="m2.165 15.803.02-.004c1.83-.363 2.948-.842 3.468-1.105A9.06 9.06 0 0 0 8 15c4.418 0 8-3.134 8-7s-3.582-7-8-7-8 3.134-8 7c0 1.76.743 3.37 1.97 4.6a10.437 10.437 0 0 1-.524 2.318l-.003.011a10.722 10.722 0 0 1-.244.637c-.079.186.074.394.273.362a21.673 21.673 0 0 0 .693-.125zm.8-3.108a1 1 0 0 0-.287-.801C1.618 10.83 1 9.468 1 8c0-3.192 3.004-6 7-6s7 2.808 7 6c0 3.193-3.004 6-7 6a8.06 8.06 0 0 1-2.088-.272 1 1 0 0 0-.711.074c-.387.196-1.24.57-2.634.893a10.97 10.97 0 0 0 .398-2z" />
-                        </svg>
-                    </div>
-                    <h5>Welcome to Health Navigator</h5>
-                    <p>Start a new consultation by describing your symptoms or uploading medical reports.</p>
-                </div>
-
-            </div>
-
-            <!-- Interruption Alert -->
-            <div id="interruption-alert" class="alert alert-warning mx-3 mb-0 d-none" role="alert">
-                <strong>⚠️ System Question:</strong> <span id="question-text"></span>
-            </div>
-
-            <!-- Input Form -->
-            <div class="border-top p-3 bg-white">
-                <form id="chat-form" enctype="multipart/form-data">
-                    <input type="hidden" name="conversation_id" id="current-conversation-id">
-                    <input type="file" id="file-input" name="files" multiple style="display: none;"
-                        accept=".pdf,.jpg,.jpeg,.png,.txt">
-
-                    <div id="file-preview" class="mb-2"></div>
-
-                    <div class="input-group">
-                        <button type="button" id="attachment-btn" class="btn btn-outline-secondary">
-                            📎
-                        </button>
-                        <input type="text" id="message-input" name="message" class="form-control"
-                            placeholder="Describe your symptoms or ask a question..." required>
-                        <button type="submit" class="btn btn-primary">
-                            Send
-                        </button>
-                    </div>
-                </form>
-            </div>
-
         </div>
-    </div>
+
+        <!-- Interruption Alert -->
+        <div id="interruption-alert" class="alert alert-warning border-0 shadow-sm mx-4 mb-0 mt-3 d-flex align-items-start gap-3 d-none" role="alert">
+            <i class="bi bi-exclamation-triangle-fill fs-5 mt-1"></i>
+            <div>
+                <strong>System Question:</strong>
+                <div id="question-text" class="mt-1"></div>
+            </div>
+        </div>
+
+        <!-- Input Area -->
+        <div class="input-area">
+            <form id="chat-form" enctype="multipart/form-data">
+                <input type="hidden" name="conversation_id" id="current-conversation-id">
+
+                <!-- Hidden Real File Input -->
+                <input type="file" id="file-input" name="files" multiple style="display: none;"
+                    accept=".pdf,.jpg,.jpeg,.png,.txt,.docx">
+
+                <!-- File Staging Area -->
+                <div id="file-staging-area" class="file-staging-area"></div>
+
+                <div class="input-container">
+                    <div class="input-controls">
+                        <button type="button" id="attachment-btn" class="btn-icon" title="Attach Files">
+                            <i class="bi bi-paperclip fs-5"></i>
+                        </button>
+
+                        <input type="text" id="message-input" name="message"
+                            placeholder="Type your message here..." autocomplete="off">
+
+                        <button type="submit" class="btn-icon btn-send shadow-sm">
+                            <i class="bi bi-send-fill"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="text-center mt-2">
+                    <small class="text-muted" style="font-size: 0.75rem;">
+                        <i class="bi bi-shield-lock"></i> Your medical data is encrypted and secure.
+                    </small>
+                </div>
+            </form>
+        </div>
+
+    </main>
 </div>
-
 {% endblock %}
