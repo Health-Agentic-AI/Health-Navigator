@@ -191,12 +191,12 @@ def get_llm():
 
 def get_sql_db():
     try:
-        mysql_uri = f'mysql+pymysql://{os.environ.get("MYSQL_USER")}:{os.environ.get("MYSQL_PASSWORD")}@{os.environ.get("MYSQL_HOST")}:{os.environ.get("MYSQL_PORT")}/{os.environ.get("DATABASE_NAME")}'
+        pg_uri = f'postgresql+psycopg2://{os.environ.get("POSTGRES_USERNAME")}:{os.environ.get("POSTGRES_PASSWORD")}@{os.environ.get("POSTGRES_HOST")}:{os.environ.get("POSTGRES_PORT")}/{os.environ.get("DATABASE_NAME")}'
         # If any env var is None, this string might look weird but won't crash until connection attempt.
         # But if we are in build phase, we might not want to connect.
         # However, SQLDatabase.from_uri usually attempts connection.
         # For build phase, we rely on lazy loading so this function isn't called.
-        return SQLDatabase.from_uri(mysql_uri)
+        return SQLDatabase.from_uri(pg_uri)
     except Exception as e:
         print(f"Failed to connect to DB: {e}")
         return None
