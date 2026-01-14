@@ -161,6 +161,31 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
+    // Loading Indicator Helper
+    let loadingDiv = null;
+
+    function showLoading() {
+        loadingDiv = document.createElement('div');
+        loadingDiv.className = 'message-wrapper assistant';
+        loadingDiv.innerHTML = `
+            <div class="message-card">
+                <div class="loading-indicator">
+                    <div class="loading-circle"></div>
+                    <div class="loading-text">Analyzing medical data...</div>
+                </div>
+            </div>
+        `;
+        chatMessages.appendChild(loadingDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function hideLoading() {
+        if (loadingDiv) {
+            loadingDiv.remove();
+            loadingDiv = null;
+        }
+    }
+
     chatForm.addEventListener('submit', async (e) => {
         e.preventDefault();
 
@@ -198,9 +223,12 @@ document.addEventListener('DOMContentLoaded', function () {
 
         if (emptyState) emptyState.style.display = 'none';
 
-        statusBadge.textContent = 'Processing...';
+        // Update Status & Show Loading
+        statusBadge.textContent = 'Analyzing...';
         statusBadge.className = 'badge bg-warning text-dark rounded-pill';
         interruptionAlert.classList.add('d-none');
+
+        showLoading();
 
         // Disable input while processing? Maybe just button.
         const submitBtn = chatForm.querySelector('button[type="submit"]');
@@ -213,6 +241,8 @@ document.addEventListener('DOMContentLoaded', function () {
             });
 
             const data = await response.json();
+
+            hideLoading();
 
             if (response.ok) {
                 if (data.status === 'completed') {
@@ -240,6 +270,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 statusBadge.className = 'badge bg-danger rounded-pill';
             }
         } catch (error) {
+            hideLoading();
             console.error('Error:', error);
             appendMessage('error', 'Network error. Please try again.');
             statusBadge.textContent = 'Error';
