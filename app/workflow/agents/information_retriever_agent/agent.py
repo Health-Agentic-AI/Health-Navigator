@@ -282,7 +282,6 @@ def invoke_db_retriever_agent(
             llm,
             tools=all_tools,
             system_prompt=formatted_system_prompt,
-            max_iterations=10
         )
 
         agent_input = {
@@ -294,7 +293,7 @@ def invoke_db_retriever_agent(
         print(f"DEBUG: About to invoke retriever agent...")
         print(f"DEBUG: Agent input messages count: {len(agent_input['messages'])}")
 
-        result = retriever_agent.invoke(agent_input)
+        result = retriever_agent.invoke(agent_input, config={"recursion_limit": 10})
 
         print(f"DEBUG: Agent returned successfully")
         print(f"DEBUG: Result message count: {len(result['messages'])}")

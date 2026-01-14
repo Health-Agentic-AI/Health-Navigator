@@ -1,6 +1,6 @@
 import os
 from typing import Dict, Any
-from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
+from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage, AIMessage
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_community.utilities import SQLDatabase
 from langchain_community.agent_toolkits import SQLDatabaseToolkit
@@ -158,7 +158,7 @@ def invoke_medical_agent(
     print(f"DEBUG: Medical Agent Response: {agent_response[:200]}...")
     
     # Update conversation history
-    updated_history = conversation_history + [agent_response]
+    updated_history = conversation_history + [AIMessage(content=agent_response)]
     
     # Check if agent needs more information
     needs_more_info = False

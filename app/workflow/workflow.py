@@ -418,6 +418,7 @@ def medical_agent_node(state: AgentState):
         state["info_request"] = result["info_request"]
         state["reflection_count"] = reflection_count + 1
         print(f"DEBUG: Medical Agent requested more info: {state['info_request']}")
+        print(f"DEBUG: REFLECTION COUNT INCREMENTED TO: {state['reflection_count']}")
     else:
         state["medical_agent_needs_info"] = False
         state["medical_agent_output"] = result["response"][0]['text']
