@@ -15,10 +15,8 @@ from typing import TypedDict, List, Dict, Any
 from typing import Literal, List, Dict, Any, Annotated
 from typing_extensions import TypedDict
 from langchain_google_genai import ChatGoogleGenerativeAI
-from langgraph.types import Command
+from langgraph.types import Command, interrupt
 import operator
-
-
 
 from app.workflow.helper_utils.clear_valid_input_validator.input_validator import validate_first_input, validate_input_text_only
 from app.workflow.helper_utils.extract_text_from_attachments import extract_text_from_file
@@ -39,6 +37,7 @@ class AgentState(TypedDict):
     input_prompt: str
     attachments: Dict[str, Any]
     user_id: str
+    thread_id: str
     
     # Validation
     input_validation_result: str
@@ -360,34 +359,65 @@ def db_retriever_agent_node(state: AgentState):
     and determines whether to query more, ask user, or provide results.
     """
     print("\n--- Entering Node: db_retriever_agent_node ---")
-    # Prepare context
     aggregated_output = state.get("models_agents_aggregated_output", "")
     info_request = state.get("info_request", "")
     reflection_count = state.get("reflection_count", 0)
     max_reflections = state.get("max_reflections", 5)
     user_id = state["user_id"]
+    thread_id = state["thread_id"]
     
     print(f"DEBUG: reflection_count: {reflection_count}/{max_reflections}")
     print(f"DEBUG: info_request: {info_request}")
 
-    # Invoke the DB retriever agent
     result = invoke_db_retriever_agent(
         aggregated_output=aggregated_output,
         info_request=info_request,
         reflection_count=reflection_count,
         max_reflections=max_reflections,
         user_id=user_id,
-        conversation_history=state["conversation_history"]
+        conversation_history=state["conversation_history"],
+        checkpointer=checkpointer,
+        thread_id=thread_id
     )
     
-    # Update state with results
+    # Update state
     state["conversation_history"] = result["conversation_history"]
-    state["db_query_results"] = result["response"][0]['text']
-    state["medical_agent_needs_info"] = result["needs_more_info"]
+    response_text = result["response"][0]['text']
+    
+    # ✅ CHECK IF AGENT NEEDS USER INPUT
+    question = None
+    for msg in reversed(result["conversation_history"]):
+        if hasattr(msg, 'tool_calls') and msg.tool_calls:
+            for tool_call in msg.tool_calls:
+                if tool_call['name'] == 'ask_user_for_info':
+                    question = tool_call['args']['request']
+                    break
+            if question:
+                break
+
+    if question:
+        print(f"DEBUG: Triggering interrupt with question: {question}")
+        
+        # Interrupt at the MAIN WORKFLOW level
+        user_response = interrupt(question)
+        
+        print(f"DEBUG: Received user response: {user_response}")
+        
+        # Add the user's response to conversation history
+        state["conversation_history"].append({
+            "role": "user", 
+            "content": user_response
+        })
+        
+        # Store the response for the medical agent
+        state["db_query_results"] = f"USER PROVIDED INFORMATION:\n{user_response}"
+        state["medical_agent_needs_info"] = False
+    else:
+        state["db_query_results"] = response_text
+        state["medical_agent_needs_info"] = result["needs_more_info"]
     
     print(f"DEBUG: Exiting db_retriever_agent_node. needs_more_info: {state['medical_agent_needs_info']}")
     return state
-
 
 def medical_agent_node(state: AgentState):
     """
@@ -395,6 +425,7 @@ def medical_agent_node(state: AgentState):
     Requests more information when critical data is missing.
     """
     print("\n--- Entering Node: medical_agent_node ---")
+    
     # Prepare context
     aggregated_output = state["models_agents_aggregated_output"]
     db_results = state.get("db_query_results", "No database results available")
@@ -413,19 +444,84 @@ def medical_agent_node(state: AgentState):
     # Update state with results
     state["conversation_history"] = result["conversation_history"]
     
-    if result["needs_more_info"]:
+    # ✅ CHECK IF MEDICAL AGENT NEEDS MORE INFO
+    # Trigger keywords that indicate need for more information:
+    NEED_MORE_INFO_TRIGGERS = [
+        "NEED_MORE_INFO",
+        "INFORMATION NEEDED:",
+        "NEED_MORE_INFORMATION",
+        "REQUIRE ADDITIONAL",
+        "DATA DISCREPANCY IDENTIFIED"
+    ]
+    
+    response_text = result["response"][0]['text']
+    needs_more_info = any(trigger in response_text for trigger in NEED_MORE_INFO_TRIGGERS)
+    
+    if needs_more_info and reflection_count < max_reflections:
+        # Extract the specific information request
+        info_request = extract_info_request(response_text)
+        
         state["medical_agent_needs_info"] = True
-        state["info_request"] = result["info_request"]
+        state["info_request"] = info_request
         state["reflection_count"] = reflection_count + 1
-        print(f"DEBUG: Medical Agent requested more info: {state['info_request']}")
+        
+        print(f"DEBUG: Medical Agent requested more info: {info_request}")
         print(f"DEBUG: REFLECTION COUNT INCREMENTED TO: {state['reflection_count']}")
-    else:
+        
+    elif reflection_count >= max_reflections and needs_more_info:
+        # At max reflections but still needs info - force completion
+        print(f"DEBUG: Max reflections reached ({max_reflections}). Forcing final response.")
+        
+        # Optionally: re-invoke medical agent with instruction to provide best-possible assessment
+        final_result = invoke_medical_agent(
+            aggregated_output=aggregated_output,
+            db_results=db_results + "\n\n[MAX REFLECTIONS REACHED - Provide best assessment with available data]",
+            reflection_count=max_reflections,
+            max_reflections=max_reflections,
+            conversation_history=state["conversation_history"],
+            force_completion=True  # Add this flag to your invoke function
+        )
+        
         state["medical_agent_needs_info"] = False
-        state["medical_agent_output"] = result["response"][0]['text']
-        print("DEBUG: Medical Agent output generated.")
+        state["medical_agent_output"] = final_result["response"][0]['text']
+        state["conversation_history"] = final_result["conversation_history"]
+        
+    else:
+        # Has enough info or didn't request more
+        state["medical_agent_needs_info"] = False
+        state["medical_agent_output"] = response_text
+        print("DEBUG: Medical Agent provided final assessment.")
     
     print("DEBUG: Exiting medical_agent_node.")
     return state
+
+
+def extract_info_request(response_text: str) -> str:
+    """
+    Extract the specific information request from medical agent's response.
+    Looks for content after NEED_MORE_INFO or similar triggers.
+    """
+    # Look for the information request section
+    patterns = [
+        r"NEED_MORE_INFO\s*\n\s*\*\*INFORMATION NEEDED:\*\*\s*\n(.*?)\n\s*\*\*CLINICAL JUSTIFICATION:\*\*",
+        r"INFORMATION NEEDED:\s*\n(.*?)\n\s*\*\*CLINICAL JUSTIFICATION:\*\*",
+        r"NEED_MORE_INFO[:\s]*\n(.*?)(?:\n\n|\Z)",
+        r"DATA DISCREPANCY IDENTIFIED.*?NEED_MORE_INFO:\s*(.*?)(?:\n\n|\Z)"
+    ]
+    
+    import re
+    for pattern in patterns:
+        match = re.search(pattern, response_text, re.DOTALL | re.IGNORECASE)
+        if match:
+            return match.group(1).strip()
+    
+    # Fallback: return everything after first trigger found
+    for trigger in ["NEED_MORE_INFO", "INFORMATION NEEDED:", "DATA DISCREPANCY"]:
+        if trigger in response_text:
+            idx = response_text.index(trigger)
+            return response_text[idx:idx+500].strip()  # Get next 500 chars
+    
+    return "Additional information needed for accurate assessment"
 
 
 
@@ -617,8 +713,9 @@ app = workflow.compile(checkpointer=checkpointer)
 
 def run_workflow(initial_state, thread_id: str):
     config = {
-            "configurable": {"thread_id": thread_id},
-            "metadata": {"user_id": initial_state.get("user_id"), "flow_type": "medical_analysis"} 
-        }
+        "configurable": {"thread_id": thread_id},
+        "metadata": {"user_id": initial_state.get("user_id"), "flow_type": "medical_analysis"},
+        "recursion_limit": 300  # Add this
+    }
     returned_state = app.invoke(initial_state, config=config)
     return returned_state

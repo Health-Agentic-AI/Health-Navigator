@@ -242,6 +242,13 @@ document.addEventListener('DOMContentLoaded', function () {
 
             const data = await response.json();
 
+            // ADD THESE DEBUG LINES
+            console.log('=== BACKEND RESPONSE ===');
+            console.log('Status:', response.status);
+            console.log('Data:', data);
+            console.log('data.status:', data.status);
+            console.log('data.question:', data.question);
+
             hideLoading();
 
             if (response.ok) {
@@ -294,8 +301,8 @@ document.addEventListener('DOMContentLoaded', function () {
                     data.messages.forEach(msg => {
                         appendMessage(msg.role, msg.content);
                         if (msg.attachments && msg.attachments.length > 0) {
-                           // Could append a separate message or info about attachments
-                           // For now, let's assume content covers it or user remembers
+                            // Could append a separate message or info about attachments
+                            // For now, let's assume content covers it or user remembers
                         }
                     });
                 } else {

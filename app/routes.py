@@ -309,6 +309,7 @@ def send_message():
             "input_prompt": message,
             "attachments": uploaded_files,
             "user_id": str(user.id),
+            "thread_id": thread_id,
             "conversation_history": []
         }
 
@@ -337,9 +338,26 @@ def send_message():
                 })
             else:
                 # Workflow was interrupted - ask user for info
-                if final_state.tasks and final_state.tasks[0].interrupts:
-                    interrupt_value = final_state.tasks[0].interrupts[0].value
+                print(f"DEBUG: final_state.next = {final_state.next}")
+                print(f"DEBUG: final_state.tasks = {final_state.tasks}")
+                
+                # Try different ways to get interrupt value
+                interrupt_value = None
+                
+                if hasattr(final_state, 'tasks') and final_state.tasks:
+                    task = final_state.tasks[0]
+                    print(f"DEBUG: task = {task}")
+                    print(f"DEBUG: task.interrupts = {getattr(task, 'interrupts', None)}")
                     
+                    if hasattr(task, 'interrupts') and task.interrupts:
+                        interrupt_value = task.interrupts[0].value
+                
+                # Alternative: Check the state values directly
+                if not interrupt_value:
+                    print("DEBUG: Checking state.values for interrupt info")
+                    print(f"DEBUG: final_state.values = {final_state.values}")
+                
+                if interrupt_value:
                     system_msg = Message(
                         conversation_id=conversation_id,
                         sender_type='system_question',
@@ -353,6 +371,9 @@ def send_message():
                         'question': interrupt_value,
                         'conversation_id': conversation.id
                     })
+                else:
+                    print("ERROR: Interrupt detected but couldn't extract question")
+                    return jsonify({'error': 'Interrupt handling error'}), 500
 
         except GraphInterrupt as e:
             # This should not happen with invoke() - it returns state instead
