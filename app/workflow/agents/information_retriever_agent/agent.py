@@ -283,7 +283,7 @@ def invoke_db_retriever_agent(
     retriever_agent = create_react_agent(
         llm,
         tools=all_tools,
-        state_modifier=formatted_system_prompt,
+        messages_modifier=formatted_system_prompt,
     )
 
     agent_input = {
