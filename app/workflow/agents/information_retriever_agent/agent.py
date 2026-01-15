@@ -5,7 +5,7 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_community.utilities import SQLDatabase
 from langchain_community.agent_toolkits import SQLDatabaseToolkit
 from langchain_core.tools import tool
-from langgraph.prebuilt import create_react_agent
+from langchain.agents import create_agent
 from langgraph.types import interrupt
 import functools
 import time 
@@ -196,8 +196,7 @@ DB_RETRIEVER_SYSTEM_PROMPT = """You are a Medical Information Retrieval Speciali
 INFORMATION_COMPLETE
 
 **VECTOR DATABASE RESULTS:**
-[Medical knowledge, research, guidelines]
-
+[Medical knowledge, research, guidelines]\n
 **RELATIONAL DATABASE RESULTS:**
 [Patient records, history, test results]
 
@@ -279,11 +278,11 @@ def invoke_db_retriever_agent(
         user_id=user_id
     )
 
-    # Use langgraph's prebuilt agent which handles interrupts correctly
-    retriever_agent = create_react_agent(
+    # Restored create_agent as per user request
+    retriever_agent = create_agent(
         llm,
         tools=all_tools,
-        messages_modifier=formatted_system_prompt,
+        system_prompt=formatted_system_prompt,
     )
 
     agent_input = {
