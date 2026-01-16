@@ -1,73 +1,157 @@
 {% extends "base.html" %}
 
+{% block title %}Register - Health Navigator{% endblock %}
+
 {% block content %}
-<div class="container h-100">
-    <div class="row h-100 align-items-center justify-content-center">
-        <div class="col-md-6 col-lg-5">
-            <div class="text-center mb-4">
-                <div class="bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center shadow-sm mb-3" style="width: 64px; height: 64px; font-size: 2rem;">
-                    <i class="bi bi-heart-pulse-fill"></i>
+<div class="auth-container">
+    <div class="auth-content">
+        <div class="auth-card register-card">
+            <!-- Left Side - Branding -->
+            <div class="auth-branding">
+                <div class="branding-content">
+                    <div class="branding-icon">
+                        <i class="bi bi-heart-pulse-fill"></i>
+                        <div class="icon-glow"></div>
+                    </div>
+                    <h2 class="branding-title">Join Health Navigator</h2>
+                    <p class="branding-subtitle">Start your journey to better healthcare management</p>
+
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div class="stat-number">10K+</div>
+                            <div class="stat-label">Active Users</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-number">50K+</div>
+                            <div class="stat-label">Consultations</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-number">98%</div>
+                            <div class="stat-label">Satisfaction</div>
+                        </div>
+                    </div>
+
+                    <div class="features-list">
+                        <div class="feature-item">
+                            <i class="bi bi-lightning-charge"></i>
+                            <span>Instant AI consultations</span>
+                        </div>
+                        <div class="feature-item">
+                            <i class="bi bi-graph-up"></i>
+                            <span>Track your health journey</span>
+                        </div>
+                        <div class="feature-item">
+                            <i class="bi bi-database-lock"></i>
+                            <span>Secure data storage</span>
+                        </div>
+                    </div>
                 </div>
-                <h3 class="fw-bold text-primary">Join Health Navigator</h3>
-                <p class="text-muted">Create your patient profile today</p>
+                <div class="branding-decoration">
+                    <div class="deco-circle deco-1"></div>
+                    <div class="deco-circle deco-2"></div>
+                    <div class="deco-circle deco-3"></div>
+                </div>
             </div>
 
-            <div class="card border-0 shadow-lg rounded-4">
-                <div class="card-body p-4 p-md-5">
+            <!-- Right Side - Form -->
+            <div class="auth-form-container">
+                <div class="auth-form-content">
+                    <div class="form-header">
+                        <h3 class="form-title">Create Account</h3>
+                        <p class="form-subtitle">Fill in your details to get started</p>
+                    </div>
 
                     {% if error %}
-                        <div class="alert alert-danger d-flex align-items-center gap-2 mb-4" role="alert">
-                            <i class="bi bi-exclamation-circle-fill"></i>
-                            <div>{{ error }}</div>
-                        </div>
+                    <div class="alert-custom alert-error">
+                        <i class="bi bi-exclamation-circle"></i>
+                        <span>{{ error }}</span>
+                    </div>
                     {% endif %}
 
-                    <form method="POST">
-                        <div class="mb-3">
-                            <label class="form-label text-muted fw-medium small">Full Name</label>
-                            <div class="input-group">
-                                <span class="input-group-text bg-light border-end-0 text-muted"><i class="bi bi-person-vcard"></i></span>
-                                <input type="text" name="full_name" class="form-control bg-light border-start-0 ps-0" placeholder="John Doe" required>
+                    <form method="POST" class="auth-form" id="registerForm">
+                        <div class="form-group">
+                            <label class="form-label">Full Name</label>
+                            <div class="input-wrapper">
+                                <i class="bi bi-person-vcard input-icon"></i>
+                                <input type="text" name="full_name" class="form-input" placeholder="John Doe" required
+                                    autocomplete="name">
                             </div>
                         </div>
 
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <label class="form-label text-muted fw-medium small">Username</label>
-                                <div class="input-group">
-                                    <span class="input-group-text bg-light border-end-0 text-muted"><i class="bi bi-person"></i></span>
-                                    <input type="text" name="username" class="form-control bg-light border-start-0 ps-0" placeholder="jdoe" required>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">Username</label>
+                                <div class="input-wrapper">
+                                    <i class="bi bi-at input-icon"></i>
+                                    <input type="text" name="username" class="form-input" placeholder="johndoe" required
+                                        autocomplete="username">
                                 </div>
                             </div>
-                            <div class="col-md-6">
-                                <label class="form-label text-muted fw-medium small">Email</label>
-                                <div class="input-group">
-                                    <span class="input-group-text bg-light border-end-0 text-muted"><i class="bi bi-envelope"></i></span>
-                                    <input type="email" name="email" class="form-control bg-light border-start-0 ps-0" placeholder="john@example.com" required>
+
+                            <div class="form-group">
+                                <label class="form-label">Email</label>
+                                <div class="input-wrapper">
+                                    <i class="bi bi-envelope input-icon"></i>
+                                    <input type="email" name="email" class="form-input" placeholder="john@example.com"
+                                        required autocomplete="email">
                                 </div>
                             </div>
                         </div>
 
-                        <div class="mb-4">
-                            <label class="form-label text-muted fw-medium small">Password</label>
-                            <div class="input-group">
-                                <span class="input-group-text bg-light border-end-0 text-muted"><i class="bi bi-lock"></i></span>
-                                <input type="password" name="password" class="form-control bg-light border-start-0 ps-0" placeholder="••••••••" required>
+                        <div class="form-group">
+                            <label class="form-label">Password</label>
+                            <div class="input-wrapper">
+                                <i class="bi bi-lock input-icon"></i>
+                                <input type="password" name="password" class="form-input"
+                                    placeholder="Create a strong password" required autocomplete="new-password"
+                                    id="passwordInput">
+                                <button type="button" class="toggle-password" id="togglePassword">
+                                    <i class="bi bi-eye"></i>
+                                </button>
                             </div>
-                            <div class="form-text small mt-1">Must be at least 8 characters.</div>
+                            <div class="password-strength" id="passwordStrength">
+                                <div class="strength-bars">
+                                    <div class="strength-bar"></div>
+                                    <div class="strength-bar"></div>
+                                    <div class="strength-bar"></div>
+                                    <div class="strength-bar"></div>
+                                </div>
+                                <span class="strength-text">Password strength</span>
+                            </div>
                         </div>
 
-                        <button type="submit" class="btn btn-primary w-100 py-2 rounded-3 fw-semibold shadow-sm">
-                            Create Account
+                        <div class="form-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="terms" required>
+                                <span class="checkbox-custom"></span>
+                                <span class="checkbox-text">I agree to the <a href="#" class="link-primary">Terms of
+                                        Service</a> and <a href="#" class="link-primary">Privacy Policy</a></span>
+                            </label>
+                        </div>
+
+                        <button type="submit" class="btn-submit" id="submitBtn">
+                            <span class="btn-text">Create Account</span>
+                            <span class="btn-loader"></span>
                         </button>
                     </form>
-                </div>
-                <div class="card-footer bg-light border-0 py-3 text-center rounded-bottom-4">
-                    <small class="text-muted">Already have an account?</small>
-                    <a href="{{ url_for('main.login') }}" class="text-primary fw-semibold text-decoration-none ms-1">Login here</a>
+
+                    <div class="form-footer">
+                        <p class="footer-text">Already have an account?
+                            <a href="{{ url_for('main.login') }}" class="link-accent">Sign in here</a>
+                        </p>
+                    </div>
+
+                    <div class="security-badge">
+                        <i class="bi bi-shield-lock-fill"></i>
+                        <span>HIPAA compliant & encrypted</span>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/register.js') }}"></script>
 {% endblock %}

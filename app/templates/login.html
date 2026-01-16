@@ -1,59 +1,113 @@
 {% extends "base.html" %}
 
+{% block title %}Sign In - Health Navigator{% endblock %}
+
 {% block content %}
-<div class="container h-100">
-    <div class="row h-100 align-items-center justify-content-center">
-        <div class="col-md-5 col-lg-4">
-            <div class="text-center mb-4">
-                <div class="bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center shadow-sm mb-3" style="width: 64px; height: 64px; font-size: 2rem;">
-                    <i class="bi bi-heart-pulse-fill"></i>
+<div class="auth-container">
+    <div class="auth-content">
+        <div class="auth-card">
+            <!-- Left Side - Branding -->
+            <div class="auth-branding">
+                <div class="branding-content">
+                    <div class="branding-icon">
+                        <i class="bi bi-heart-pulse-fill"></i>
+                        <div class="icon-glow"></div>
+                    </div>
+                    <h2 class="branding-title">Welcome Back</h2>
+                    <p class="branding-subtitle">Access your medical consultation portal securely</p>
+
+                    <div class="features-list">
+                        <div class="feature-item">
+                            <i class="bi bi-shield-check"></i>
+                            <span>End-to-end encrypted</span>
+                        </div>
+                        <div class="feature-item">
+                            <i class="bi bi-clock-history"></i>
+                            <span>24/7 AI assistance</span>
+                        </div>
+                        <div class="feature-item">
+                            <i class="bi bi-file-medical"></i>
+                            <span>Complete medical records</span>
+                        </div>
+                    </div>
                 </div>
-                <h3 class="fw-bold text-primary">Health Navigator</h3>
-                <p class="text-muted">Secure Patient Portal</p>
+                <div class="branding-decoration">
+                    <div class="deco-circle deco-1"></div>
+                    <div class="deco-circle deco-2"></div>
+                    <div class="deco-circle deco-3"></div>
+                </div>
             </div>
 
-            <div class="card border-0 shadow-lg rounded-4">
-                <div class="card-body p-4 p-md-5">
-                    <h4 class="mb-4 fw-bold">Welcome Back</h4>
+            <!-- Right Side - Form -->
+            <div class="auth-form-container">
+                <div class="auth-form-content">
+                    <div class="form-header">
+                        <h3 class="form-title">Sign In</h3>
+                        <p class="form-subtitle">Enter your credentials to access your account</p>
+                    </div>
 
                     {% if error %}
-                        <div class="alert alert-danger d-flex align-items-center gap-2 mb-4" role="alert">
-                            <i class="bi bi-exclamation-circle-fill"></i>
-                            <div>{{ error }}</div>
-                        </div>
+                    <div class="alert-custom alert-error">
+                        <i class="bi bi-exclamation-circle"></i>
+                        <span>{{ error }}</span>
+                    </div>
                     {% endif %}
 
-                    <form method="POST">
-                        <div class="mb-3">
-                            <label class="form-label text-muted fw-medium small">Username</label>
-                            <div class="input-group">
-                                <span class="input-group-text bg-light border-end-0 text-muted"><i class="bi bi-person"></i></span>
-                                <input type="text" name="username" class="form-control bg-light border-start-0 ps-0" placeholder="Enter your username" required>
+                    <form method="POST" class="auth-form" id="loginForm">
+                        <div class="form-group">
+                            <label class="form-label">Username</label>
+                            <div class="input-wrapper">
+                                <i class="bi bi-person input-icon"></i>
+                                <input type="text" name="username" class="form-input" placeholder="Enter your username"
+                                    required autocomplete="username">
                             </div>
                         </div>
-                        <div class="mb-4">
-                            <label class="form-label text-muted fw-medium small">Password</label>
-                            <div class="input-group">
-                                <span class="input-group-text bg-light border-end-0 text-muted"><i class="bi bi-lock"></i></span>
-                                <input type="password" name="password" class="form-control bg-light border-start-0 ps-0" placeholder="••••••••" required>
+
+                        <div class="form-group">
+                            <label class="form-label">Password</label>
+                            <div class="input-wrapper">
+                                <i class="bi bi-lock input-icon"></i>
+                                <input type="password" name="password" class="form-input"
+                                    placeholder="Enter your password" required autocomplete="current-password"
+                                    id="passwordInput">
+                                <button type="button" class="toggle-password" id="togglePassword">
+                                    <i class="bi bi-eye"></i>
+                                </button>
                             </div>
                         </div>
-                        <button type="submit" class="btn btn-primary w-100 py-2 rounded-3 fw-semibold shadow-sm">
-                            Sign In
+
+                        <div class="form-options">
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="remember">
+                                <span class="checkbox-custom"></span>
+                                <span class="checkbox-text">Remember me</span>
+                            </label>
+                            <a href="#" class="link-primary">Forgot password?</a>
+                        </div>
+
+                        <button type="submit" class="btn-submit" id="submitBtn">
+                            <span class="btn-text">Sign In</span>
+                            <span class="btn-loader"></span>
                         </button>
                     </form>
-                </div>
-                <div class="card-footer bg-light border-0 py-3 text-center rounded-bottom-4">
-                    <small class="text-muted">Don't have an account?</small>
-                    <a href="{{ url_for('main.register') }}" class="text-primary fw-semibold text-decoration-none ms-1">Register Now</a>
-                </div>
-            </div>
 
-            <div class="text-center mt-4 text-muted small">
-                <i class="bi bi-shield-lock-fill me-1"></i>
-                Your data is encrypted and secure.
+                    <div class="form-footer">
+                        <p class="footer-text">Don't have an account?
+                            <a href="{{ url_for('main.register') }}" class="link-accent">Create one now</a>
+                        </p>
+                    </div>
+
+                    <div class="security-badge">
+                        <i class="bi bi-shield-lock-fill"></i>
+                        <span>Your data is encrypted and secure</span>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/login.js') }}"></script>
 {% endblock %}
