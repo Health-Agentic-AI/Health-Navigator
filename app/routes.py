@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, request, jsonify, redirect, url_for, session, current_app
 from app import db
-from app.models import User, Conversation, PatientProfile, Allergy, Medication, PastMedicalHistory, PastSurgery, FamilyHistory
+from app.models import User, Conversation, PatientProfile, Allergy, Medication, PastMedicalHistory, PastSurgery, FamilyHistory, Message, Attachment
 from app.workflow.workflow import app as workflow_app
 from langgraph.types import Command
 import uuid
@@ -99,8 +99,8 @@ def create_conversation():
 
     conversation = Conversation(
         user_id=user.id,
-        title=title,
-        messages=[]
+        title=title
+        # messages will be initialized as empty via default or just not passed
     )
     db.session.add(conversation)
     db.session.commit()
@@ -117,10 +117,20 @@ def get_conversation(conversation_id):
     if conversation.user_id != user.id:
         return jsonify({'error': 'Forbidden'}), 403
 
+    # Manually serialize messages
+    messages_list = []
+    for msg in conversation.messages:
+        messages_list.append({
+            'role': msg.sender_type,
+            'content': msg.content,
+            'timestamp': str(msg.created_at),
+            'attachments': [a.original_name for a in msg.attachments]
+        })
+
     return jsonify({
         'id': conversation.id,
         'title': conversation.title,
-        'messages': conversation.messages
+        'messages': messages_list
     })
 
 @main_bp.route('/api/chat/message', methods=['POST'])
@@ -130,13 +140,38 @@ def send_message():
         return jsonify({'error': 'Unauthorized'}), 401
 
     # Handle file uploads
-    uploaded_files = {}
-    if request.files:
+    uploaded_files = {} # filename -> path
+
+    # Get all files with the key 'files' (from frontend FormData)
+    files = request.files.getlist('files')
+
+    if files:
+        if len(files) > 20:
+             return jsonify({'error': 'Too many files. Maximum 20 allowed.'}), 400
+
         upload_folder = os.path.join(current_app.root_path, 'static', 'uploads', str(user.id))
         os.makedirs(upload_folder, exist_ok=True)
 
-        for key, file in request.files.items():
-            if file and allowed_file(file.filename):
+        for file in files:
+            # Skip empty file inputs
+            if not file or not file.filename:
+                continue
+
+            if allowed_file(file.filename):
+                # Check size (10MB) - basic check before saving
+                # Note: Flask does not read the full file into memory immediately if it's large,
+                # but accessing content_length or seeking end is needed.
+                # Content-Length header is for the whole request, so we check individually if possible.
+                # Here we just read content length if available or seek.
+
+                # Check file size safely
+                file.seek(0, os.SEEK_END)
+                file_length = file.tell()
+                file.seek(0)
+
+                if file_length > 10 * 1024 * 1024:
+                    return jsonify({'error': f'File {file.filename} is too large. Max 10MB.'}), 400
+
                 filename = secure_filename(file.filename)
                 file_path = os.path.join(upload_folder, filename)
                 file.save(file_path)
@@ -152,23 +187,35 @@ def send_message():
         conversation_id = data.get('conversation_id')
 
     if not conversation_id:
-        conversation = Conversation(user_id=user.id, title=message[:30] + "...", messages=[])
+        conversation = Conversation(user_id=user.id, title=message[:30] + "...")
         db.session.add(conversation)
-        db.session.commit()
+        db.session.flush() # Get ID
         conversation_id = conversation.id
     else:
         conversation = Conversation.query.get(conversation_id)
+        # Security Check: Ensure the conversation belongs to the logged-in user
+        if not conversation or conversation.user_id != user.id:
+            return jsonify({'error': 'Forbidden: You do not own this conversation'}), 403
 
-    # Add user message to DB
-    user_msg_obj = {
-        'role': 'user',
-        'content': message,
-        'timestamp': str(datetime.utcnow()),
-        'attachments': list(uploaded_files.keys())
-    }
-    new_messages = list(conversation.messages)
-    new_messages.append(user_msg_obj)
-    conversation.messages = new_messages
+    # Create User Message
+    user_msg = Message(
+        conversation_id=conversation_id,
+        sender_type='user',
+        content=message
+    )
+    db.session.add(user_msg)
+    db.session.flush() # Get ID for attachments
+
+    # Create Attachments
+    for filename, filepath in uploaded_files.items():
+        attachment = Attachment(
+            message_id=user_msg.id,
+            file_path=filepath,
+            original_name=filename,
+            file_type=filename.split('.')[-1].lower()
+        )
+        db.session.add(attachment)
+
     db.session.commit()
 
     # --- WORKFLOW EXECUTION ---
@@ -193,14 +240,12 @@ def send_message():
                 # Workflow completed
                 final_output = result.get("final_refined_medical_output", "Analysis complete.")
                 
-                assistant_msg_obj = {
-                    'role': 'assistant',
-                    'content': final_output,
-                    'timestamp': str(datetime.utcnow())
-                }
-                new_messages = list(conversation.messages)
-                new_messages.append(assistant_msg_obj)
-                conversation.messages = new_messages
+                assistant_msg = Message(
+                    conversation_id=conversation_id,
+                    sender_type='assistant',
+                    content=final_output
+                )
+                db.session.add(assistant_msg)
                 db.session.commit()
 
                 return jsonify({
@@ -213,14 +258,12 @@ def send_message():
                 if final_state.tasks and final_state.tasks[0].interrupts:
                     interrupt_value = final_state.tasks[0].interrupts[0].value
                     
-                    system_msg_obj = {
-                        'role': 'system_question',
-                        'content': interrupt_value,
-                        'timestamp': str(datetime.utcnow())
-                    }
-                    new_messages = list(conversation.messages)
-                    new_messages.append(system_msg_obj)
-                    conversation.messages = new_messages
+                    system_msg = Message(
+                        conversation_id=conversation_id,
+                        sender_type='system_question',
+                        content=interrupt_value
+                    )
+                    db.session.add(system_msg)
                     db.session.commit()
 
                     return jsonify({
@@ -237,14 +280,12 @@ def send_message():
             if final_state.tasks and final_state.tasks[0].interrupts:
                 interrupt_value = final_state.tasks[0].interrupts[0].value
                 
-                system_msg_obj = {
-                    'role': 'system_question',
-                    'content': interrupt_value,
-                    'timestamp': str(datetime.utcnow())
-                }
-                new_messages = list(conversation.messages)
-                new_messages.append(system_msg_obj)
-                conversation.messages = new_messages
+                system_msg = Message(
+                    conversation_id=conversation_id,
+                    sender_type='system_question',
+                    content=interrupt_value
+                )
+                db.session.add(system_msg)
                 db.session.commit()
 
                 return jsonify({
@@ -260,11 +301,15 @@ def send_message():
             return jsonify({'error': 'Workflow error during resume'}), 500
 
     else:
+        print("="*80)
+        print(f"USER ID IS: {user.id}")
+        print("="*80)
         # Start new workflow run
         initial_state = {
             "input_prompt": message,
             "attachments": uploaded_files,
             "user_id": str(user.id),
+            "thread_id": thread_id,
             "conversation_history": []
         }
 
@@ -278,14 +323,12 @@ def send_message():
                 # Completed successfully
                 final_output = result.get("final_refined_medical_output", "I could not process that request.")
 
-                assistant_msg_obj = {
-                    'role': 'assistant',
-                    'content': final_output,
-                    'timestamp': str(datetime.utcnow())
-                }
-                new_messages = list(conversation.messages)
-                new_messages.append(assistant_msg_obj)
-                conversation.messages = new_messages
+                assistant_msg = Message(
+                    conversation_id=conversation_id,
+                    sender_type='assistant',
+                    content=final_output
+                )
+                db.session.add(assistant_msg)
                 db.session.commit()
 
                 return jsonify({
@@ -295,17 +338,32 @@ def send_message():
                 })
             else:
                 # Workflow was interrupted - ask user for info
-                if final_state.tasks and final_state.tasks[0].interrupts:
-                    interrupt_value = final_state.tasks[0].interrupts[0].value
+                print(f"DEBUG: final_state.next = {final_state.next}")
+                print(f"DEBUG: final_state.tasks = {final_state.tasks}")
+                
+                # Try different ways to get interrupt value
+                interrupt_value = None
+                
+                if hasattr(final_state, 'tasks') and final_state.tasks:
+                    task = final_state.tasks[0]
+                    print(f"DEBUG: task = {task}")
+                    print(f"DEBUG: task.interrupts = {getattr(task, 'interrupts', None)}")
                     
-                    system_msg_obj = {
-                        'role': 'system_question',
-                        'content': interrupt_value,
-                        'timestamp': str(datetime.utcnow())
-                    }
-                    new_messages = list(conversation.messages)
-                    new_messages.append(system_msg_obj)
-                    conversation.messages = new_messages
+                    if hasattr(task, 'interrupts') and task.interrupts:
+                        interrupt_value = task.interrupts[0].value
+                
+                # Alternative: Check the state values directly
+                if not interrupt_value:
+                    print("DEBUG: Checking state.values for interrupt info")
+                    print(f"DEBUG: final_state.values = {final_state.values}")
+                
+                if interrupt_value:
+                    system_msg = Message(
+                        conversation_id=conversation_id,
+                        sender_type='system_question',
+                        content=interrupt_value
+                    )
+                    db.session.add(system_msg)
                     db.session.commit()
 
                     return jsonify({
@@ -313,6 +371,9 @@ def send_message():
                         'question': interrupt_value,
                         'conversation_id': conversation.id
                     })
+                else:
+                    print("ERROR: Interrupt detected but couldn't extract question")
+                    return jsonify({'error': 'Interrupt handling error'}), 500
 
         except GraphInterrupt as e:
             # This should not happen with invoke() - it returns state instead
@@ -323,14 +384,12 @@ def send_message():
             if final_state.tasks and final_state.tasks[0].interrupts:
                 interrupt_value = final_state.tasks[0].interrupts[0].value
                 
-                system_msg_obj = {
-                    'role': 'system_question',
-                    'content': interrupt_value,
-                    'timestamp': str(datetime.utcnow())
-                }
-                new_messages = list(conversation.messages)
-                new_messages.append(system_msg_obj)
-                conversation.messages = new_messages
+                system_msg = Message(
+                    conversation_id=conversation_id,
+                    sender_type='system_question',
+                    content=interrupt_value
+                )
+                db.session.add(system_msg)
                 db.session.commit()
 
                 return jsonify({
@@ -346,4 +405,3 @@ def send_message():
             return jsonify({'error': 'Workflow execution error'}), 500
 
     return jsonify({'error': 'Unknown workflow state'}), 500
-

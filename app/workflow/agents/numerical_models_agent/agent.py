@@ -66,7 +66,7 @@ def predict_heart_disease_tool(
         Sex (int): Biological sex (0=Female, 1=Male)
         Age (int): Age category (1-13, where 1=18-24, 13=80+)
         Education (int): Education level (1-6, where 1=Never attended, 6=College graduate)
-        Income (int): Income category (1-8, where 1=<$10k, 8=$75k+)
+        Income (int): Income category (1-13, where 1=<$10k, 8=$75k+)
         threshold (float, optional): Probability threshold for positive prediction. Defaults to 0.40.
     
     Returns:
@@ -180,33 +180,24 @@ def retrieve_from_vector_db(
     )
 
 
-agent = None
-current_user_id = None
-
 def get_llm():
     return ChatGoogleGenerativeAI(
         model="gemini-3-flash-preview",
         google_api_key=os.environ.get("GOOGLE_API_KEY"),
+        name="Numerical Models Agent"
     )
 
 def get_sql_db():
     try:
-        mysql_uri = f'mysql+pymysql://{os.environ.get("MYSQL_USER")}:{os.environ.get("MYSQL_PASSWORD")}@{os.environ.get("MYSQL_HOST")}:{os.environ.get("MYSQL_PORT")}/{os.environ.get("DATABASE_NAME")}'
-        # If any env var is None, this string might look weird but won't crash until connection attempt.
-        # But if we are in build phase, we might not want to connect.
-        # However, SQLDatabase.from_uri usually attempts connection.
-        # For build phase, we rely on lazy loading so this function isn't called.
-        return SQLDatabase.from_uri(mysql_uri)
+        pg_uri = f'postgresql+psycopg2://{os.environ.get("POSTGRES_USERNAME")}:{os.environ.get("POSTGRES_PASSWORD")}@{os.environ.get("POSTGRES_HOST")}:{os.environ.get("POSTGRES_PORT")}/{os.environ.get("DATABASE_NAME")}'
+        return SQLDatabase.from_uri(pg_uri)
     except Exception as e:
         print(f"Failed to connect to DB: {e}")
         return None
 
-def initialize_agent(user_id: str):
-    global agent, current_user_id
+def create_agent_for_user(user_id: str):
     start_time = time.time()
     
-    current_user_id = user_id
-
     llm = get_llm()
     db = get_sql_db()
 
@@ -241,6 +232,7 @@ IMPORTANT CONSTRAINTS:
 USER CONTEXT:
 - Current user ID: "{user_id}"
 - All database operations are scoped to this user
+- When using tools that require user_id, YOU MUST USE: "{user_id}"
 
 AVAILABLE TOOLS:
 1. SQL Database Tools: Query structured health data (medications, appointments, lab results, etc.)
@@ -287,6 +279,7 @@ Remember: You are a processing node, not a conversational agent. Analyze input â
     end_time = time.time()
     initialization_time = end_time - start_time
     print(f"Agent initialized in {initialization_time:.2f} seconds.")
+    return agent
 
 
 def invoke_agent(user_input: str, user_id: str) -> str:
@@ -303,8 +296,8 @@ def invoke_agent(user_input: str, user_id: str) -> str:
     print(f"DEBUG: User Input: {user_input[:200]}...")
 
 
-    if agent == None:
-        initialize_agent(user_id=user_id)
+    # ALWAYS create a new agent instance to ensure user_id context is fresh and correct
+    agent = create_agent_for_user(user_id=user_id)
 
     response = agent.invoke({
         "messages": [

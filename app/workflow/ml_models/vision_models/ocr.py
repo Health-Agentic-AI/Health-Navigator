@@ -1,8 +1,9 @@
 import os
+import io
 from dotenv import load_dotenv
 from google.cloud import vision
+import fitz  # PyMuPDF
 
-# Load environment variables (generic/safe path)
 load_dotenv(os.path.join(os.getcwd(), 'credentials.env'))
 
 def get_vision_client():
@@ -10,15 +11,20 @@ def get_vision_client():
 
 def extract_text(path):
     """Detects text in the file."""
-
-    # Lazy initialization
     client = get_vision_client()
-
-    with open(path, "rb") as image_file:
-        content = image_file.read()
+    
+    # Handle PDF files
+    if path.lower().endswith('.pdf'):
+        pdf_document = fitz.open(path)
+        page = pdf_document[0]  # First page
+        pix = page.get_pixmap(dpi=300)  # Higher DPI for better OCR
+        content = pix.tobytes("png")
+        pdf_document.close()
+    else:
+        with open(path, "rb") as image_file:
+            content = image_file.read()
 
     image = vision.Image(content=content)
-
     response = client.text_detection(image=image)
     texts = response.text_annotations
     full_text = ''
