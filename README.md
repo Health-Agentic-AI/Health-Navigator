@@ -10,17 +10,17 @@ The system takes user input (text and optional attachments), validates the medic
 
 ## Technology Stack
 
-*   **Orchestration**: [LangGraph](https://langchain-ai.github.io/langgraph/) (StateGraph, MemorySaver)
-*   **LLM**: Google Gemini (via `langchain-google-genai`)
-*   **Backend**: Flask
+*   **Orchestration**: [LangGraph](https://langchain-ai.github.io/langgraph/) (StateGraph, MemorySaver) for managing state, cycles, and persistence.
+*   **LLM**: Google Gemini (via `langchain-google-genai`) for reasoning, validation, and medical assessment.
+*   **Backend**: Flask for the API and application server.
 *   **Database**:
-    *   **PostgreSQL**: For structured patient data (medications, labs, vitals).
-    *   **Hybrid Vector DB**: For unstructured documents (clinical notes, reports) using Semantic + BM25 search.
-*   **Computer Vision**: PyTorch (ResNet18-based custom models).
+    *   **PostgreSQL**: Stores structured patient data (medications, appointments, labs, vitals).
+    *   **Hybrid Vector DB**: Stores unstructured documents (clinical notes, reports, scans). It utilizes a **Hybrid Search Strategy** combining **Semantic Search** (embeddings) for conceptual matching and **BM25** for precise keyword matching.
+*   **Computer Vision**: PyTorch (ResNet18-based custom models) for X-ray and tissue analysis.
 
 ## System Architecture & Agents
 
-The workflow is composed of several specialized nodes and agents:
+The workflow is composed of several specialized nodes and agents that interact dynamically:
 
 ### 1. Input Processing & Validation
 *   **Input Validation**: `first_input_validation_node` and `second_input_validation_node` ensure that both the initial prompt and any extracted text from files are valid and medically relevant.
@@ -42,13 +42,17 @@ Wrapper around specialized deep learning models for diagnostic image analysis.
 
 #### 🗄️ Information Retriever Agent (RAG)
 A specialized agent responsible for gathering patient context without hallucinating.
-*   **Hybrid Search**: Retrieves information from both the SQL database and the Vector store.
-*   **Human-in-the-Loop**: If the Medical Agent requests information that isn't in the database, this agent uses the `ask_user_for_info` tool to pause the workflow and request clarification directly from the user.
+*   **Hybrid Retrieval Strategy**: Utilizes a robust **Hybrid Search** (Semantic + BM25) to retrieve relevant records from the Vector DB and SQL queries for structured data.
+*   **Human-in-the-Loop (HITL)**: If critical information is missing from the databases, this agent utilizes the `ask_user_for_info` tool. This action **pauses the entire workflow** (via LangGraph interrupts), sends a request to the user interface, and **resumes execution** only after the user provides the necessary input.
 
 #### 🩺 Medical Agent
 The central reasoning engine that acts as the "doctor" in the loop.
 *   **Clinical Assessment**: Synthesizes the outputs from the Numerical Agent, Vision Agent, and Retriever Agent to form a cohesive medical analysis.
-*   **Reflection Loop**: If the available information is insufficient for a safe assessment, it enters a reflection loop, instructing the Retriever Agent to find the missing data (either from the DB or the user).
+*   **Iterative Reflection Loop**: The Medical Agent and Information Retriever Agent operate in a feedback loop:
+    1.  The Medical Agent analyzes available data.
+    2.  If data is insufficient or contradictory, it issues a specific request for more information.
+    3.  The workflow routes back to the Information Retriever Agent to find this missing data (either from the DB or by pausing to ask the user).
+    4.  This cycle repeats (up to a configured limit) until the Medical Agent has enough context to provide a safe and accurate assessment.
 
 ### 3. Output Refinement
 *   **Refiner Node**: The `output_refiner_node` takes the raw clinical output and reformats it to be user-friendly and empathetic, while strictly adhering to the original medical facts (no hallucinations or alterations of diagnoses).
