@@ -31,7 +31,15 @@ The workflow is composed of several specialized nodes and agents that interact d
 
 #### 🧠 Numerical Models Agent
 Analyzes structured patient data to predict health risks using neural networks.
-*   **Heart Disease Prediction**: Analyzes 19 clinical features (including BMI, Age, Smoker status, Diabetes history, etc.) to output a binary prediction and probability score for heart disease.
+*   **Heart Disease Prediction**:
+    *   Uses 19 clinical features (including BMI, Age, Smoker status, Diabetes history, etc.).
+    *   Outputs a binary prediction and probability score for heart disease risk.
+*   **Stroke Prediction**:
+    *   Uses 17 symptom/risk-factor features (age, gender, chest pain, high blood pressure, irregular heartbeat, shortness of breath, fatigue/weakness, dizziness, edema, neck/jaw pain, excessive sweating, persistent cough, nausea/vomiting, chest discomfort, cold hands/feet, snoring/sleep apnea, anxiety/doom).
+    *   Outputs a binary prediction and probability score for stroke risk.
+*   **Cancer Prediction**:
+    *   Uses 8 demographic and lifestyle features (Age, Gender, BMI, Smoking, GeneticRisk, PhysicalActivity, AlcoholIntake, CancerHistory).
+    *   Outputs a binary prediction and probability score for cancer risk.
 
 #### 👁️ Vision Models Agent
 Wrapper around specialized deep learning models for diagnostic image analysis.
