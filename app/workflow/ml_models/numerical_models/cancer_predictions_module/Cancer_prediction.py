@@ -5,6 +5,7 @@
 import torch
 import torch.nn as nn
 import pickle
+from pathlib import Path
 import pandas as pd
 
 # ========================
@@ -38,36 +39,58 @@ class CancerNN(nn.Module):
 # Load model & artifacts safely
 # ========================
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+artifacts_dir = Path(__file__).resolve().parent / "training"
+model_path = artifacts_dir / "cancer_prediction_model.pt"
+feature_names_path = artifacts_dir / "feature_names.pkl"
+scaler_path = artifacts_dir / "scaler.pkl"
 
-# Load checkpoint
-checkpoint = torch.load("cancer_prediction_model.pt", map_location=device)
+model = None
+scaler = None
+feature_names = None
 
-# Load feature names and scaler
-with open("feature_names.pkl", "rb") as f:
-    feature_names = pickle.load(f)
 
-with open("scaler.pkl", "rb") as f:
-    scaler = pickle.load(f)
+def _ensure_model_loaded():
+    global model, scaler, feature_names
+    if model is not None and scaler is not None and feature_names is not None:
+        return
 
-# Initialize model with current input size
-model = CancerNN(input_size=len(feature_names)).to(device)
+    if not model_path.exists():
+        raise FileNotFoundError(
+            f"Missing cancer model file at {model_path}. "
+            "Place cancer_prediction_model.pt in the training folder."
+        )
 
-# ========================
-# Safe state_dict loading
-# ========================
-model_dict = model.state_dict()
-# Only load layers that match shapes
-filtered_dict = {k: v for k, v in checkpoint.items() if k in model_dict and v.size() == model_dict[k].size()}
-model_dict.update(filtered_dict)
-model.load_state_dict(model_dict)
-model.eval()
+    # Load checkpoint
+    checkpoint = torch.load(model_path, map_location=device)
 
-print("✓ Cancer PyTorch model loaded safely\n")
+    # Load feature names and scaler
+    with open(feature_names_path, "rb") as f:
+        feature_names = pickle.load(f)
+
+    with open(scaler_path, "rb") as f:
+        scaler = pickle.load(f)
+
+    # Initialize model with current input size
+    model = CancerNN(input_size=len(feature_names)).to(device)
+
+    # ========================
+    # Safe state_dict loading
+    # ========================
+    model_dict = model.state_dict()
+    # Only load layers that match shapes
+    filtered_dict = {k: v for k, v in checkpoint.items() if k in model_dict and v.size() == model_dict[k].size()}
+    model_dict.update(filtered_dict)
+    model.load_state_dict(model_dict)
+    model.eval()
+
+    print("✓ Cancer PyTorch model loaded safely\n")
+
 
 # ========================
 # Prediction function
 # ========================
 def predict_cancer(patient_data, threshold=0.5):
+    _ensure_model_loaded()
     missing = [f for f in feature_names if f not in patient_data]
     if missing:
         raise ValueError(f"Missing features: {missing}")
@@ -92,6 +115,7 @@ def predict_cancer(patient_data, threshold=0.5):
 # User Input
 # ========================
 if __name__ == "__main__":
+    _ensure_model_loaded()
     print("CANCER PREDICTION - USER INPUT")
     print("=" * 60)
 

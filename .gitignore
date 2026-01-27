@@ -12,3 +12,4 @@ notes.txt
 chroma_db/
 test_files/
 uploads/
+.vscode/settings.json

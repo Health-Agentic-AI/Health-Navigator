@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import pickle
+from pathlib import Path
 import pandas as pd
 
 # ========================
@@ -35,19 +36,20 @@ class StrokeNN(nn.Module):
 # Load model, scaler, and features
 # ========================
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+results_dir = Path(__file__).resolve().parent / "Training" / "results"
 
 # Load model
-checkpoint = torch.load('results/stroke_model.pth', map_location=device)
+checkpoint = torch.load(results_dir / "stroke_model.pth", map_location=device)
 model = StrokeNN(input_size=checkpoint['input_size']).to(device)
 model.load_state_dict(checkpoint['model_state_dict'])
 model.eval()
 
 # Load scaler
-with open('results/scaler.pkl', 'rb') as f:
+with open(results_dir / "scaler.pkl", 'rb') as f:
     scaler = pickle.load(f)
 
 # Load feature names
-with open('results/feature_names.pkl', 'rb') as f:
+with open(results_dir / "feature_names.pkl", 'rb') as f:
     feature_names = pickle.load(f)
 
 print("✓ Stroke model loaded successfully!\n")
