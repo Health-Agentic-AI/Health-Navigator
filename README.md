@@ -73,5 +73,15 @@ The central reasoning engine that acts as the "doctor" in the loop.
 *   `app/workflow/helper_utils/`: Utilities for input validation, OCR, and file processing.
 *   `Workflow Diagram/`: Contains the project's architectural diagrams.
 
+## Local Setup Notes
+
+If you run the Flask app locally, ensure the numerical model artifacts exist in the expected `results/` directory (relative to the project root). For example, the stroke prediction module loads:
+
+*   `results/stroke_model.pth`
+*   `results/scaler.pkl`
+*   `results/feature_names.pkl`
+
+If these files are missing, Flask startup will fail with `FileNotFoundError`. Place the trained artifacts in `results/` or update the model paths accordingly in your local environment.
+
 ## Disclaimer
 Health-Navigator is an AI-assisted tool developed for experimentation and demonstration purposes. It is **not** a substitute for professional medical advice, diagnosis, or treatment. Always consult with a qualified healthcare provider for medical concerns.
