@@ -16,6 +16,8 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_google_genai import ChatGoogleGenerativeAI
 
 from app.workflow.ml_models.numerical_models.heart_disease.heart_disease import predict_heart_disease
+from app.workflow.ml_models.numerical_models.stroke_prediction.stroke_predictions import predict_stroke_risk
+from app.workflow.ml_models.numerical_models.cancer_predictions_module.Cancer_prediction import predict_cancer
 from app.workflow.vectordb.vectordb import HybridVectorDB
 
 @tool
@@ -124,6 +126,169 @@ def predict_heart_disease_tool(
     
     result = predict_heart_disease(patient_data, threshold=threshold)
     print(f"DEBUG: predict_heart_disease_tool result: {result}")
+    return result
+
+@tool
+def predict_stroke_risk_tool(
+    age: int,
+    gender: int,
+    chest_pain: int,
+    high_blood_pressure: int,
+    irregular_heartbeat: int,
+    shortness_of_breath: int,
+    fatigue_weakness: int,
+    dizziness: int,
+    swelling_edema: int,
+    neck_jaw_pain: int,
+    excessive_sweating: int,
+    persistent_cough: int,
+    nausea_vomiting: int,
+    chest_discomfort: int,
+    cold_hands_feet: int,
+    snoring_sleep_apnea: int,
+    anxiety_doom: int,
+    threshold: float = 0.5
+) -> dict:
+    """
+    Predicts stroke risk using a neural network model trained on symptom and risk-factor data.
+
+    This tool analyzes 17 features (age, gender, and symptom/risk indicators) to estimate the
+    probability of stroke. It returns both a binary prediction (0=No Risk, 1=At Risk) and the
+    probability score.
+
+    Args:
+        age (int): Age in years.
+        gender (int): Gender indicator (0=Female, 1=Male).
+        chest_pain (int): Chest pain present (0=No, 1=Yes).
+        high_blood_pressure (int): History of high blood pressure (0=No, 1=Yes).
+        irregular_heartbeat (int): Irregular heartbeat present (0=No, 1=Yes).
+        shortness_of_breath (int): Shortness of breath (0=No, 1=Yes).
+        fatigue_weakness (int): Fatigue or weakness (0=No, 1=Yes).
+        dizziness (int): Dizziness (0=No, 1=Yes).
+        swelling_edema (int): Swelling/edema (0=No, 1=Yes).
+        neck_jaw_pain (int): Neck or jaw pain (0=No, 1=Yes).
+        excessive_sweating (int): Excessive sweating (0=No, 1=Yes).
+        persistent_cough (int): Persistent cough (0=No, 1=Yes).
+        nausea_vomiting (int): Nausea or vomiting (0=No, 1=Yes).
+        chest_discomfort (int): Chest discomfort (0=No, 1=Yes).
+        cold_hands_feet (int): Cold hands or feet (0=No, 1=Yes).
+        snoring_sleep_apnea (int): Snoring or sleep apnea (0=No, 1=Yes).
+        anxiety_doom (int): Anxiety or sense of doom (0=No, 1=Yes).
+        threshold (float, optional): Probability threshold for positive prediction. Defaults to 0.5.
+
+    Returns:
+        dict: {
+            'prediction': int (0 or 1, where 1 indicates elevated stroke risk),
+            'probability': float (rounded to 4 decimal places, risk probability)
+        }
+
+    Example:
+        result = predict_stroke_risk_tool(
+            age=62,
+            gender=1,
+            chest_pain=0,
+            high_blood_pressure=1,
+            irregular_heartbeat=1,
+            shortness_of_breath=0,
+            fatigue_weakness=1,
+            dizziness=0,
+            swelling_edema=0,
+            neck_jaw_pain=0,
+            excessive_sweating=0,
+            persistent_cough=0,
+            nausea_vomiting=0,
+            chest_discomfort=1,
+            cold_hands_feet=0,
+            snoring_sleep_apnea=1,
+            anxiety_doom=0
+        )
+        # Returns: {'prediction': 1, 'probability': 0.5821}
+    """
+    print(f"DEBUG: predict_stroke_risk_tool called with args: {locals()}")
+    patient_data = {
+        "age": age,
+        "gender": gender,
+        "chest_pain": chest_pain,
+        "high_blood_pressure": high_blood_pressure,
+        "irregular_heartbeat": irregular_heartbeat,
+        "shortness_of_breath": shortness_of_breath,
+        "fatigue_weakness": fatigue_weakness,
+        "dizziness": dizziness,
+        "swelling_edema": swelling_edema,
+        "neck_jaw_pain": neck_jaw_pain,
+        "excessive_sweating": excessive_sweating,
+        "persistent_cough": persistent_cough,
+        "nausea_vomiting": nausea_vomiting,
+        "chest_discomfort": chest_discomfort,
+        "cold_hands_feet": cold_hands_feet,
+        "snoring_sleep_apnea": snoring_sleep_apnea,
+        "anxiety_doom": anxiety_doom,
+    }
+    result = predict_stroke_risk(patient_data, threshold=threshold)
+    print(f"DEBUG: predict_stroke_risk_tool result: {result}")
+    return result
+
+@tool
+def predict_cancer_tool(
+    Age: int,
+    Gender: int,
+    BMI: float,
+    Smoking: int,
+    GeneticRisk: int,
+    PhysicalActivity: int,
+    AlcoholIntake: int,
+    CancerHistory: int,
+    threshold: float = 0.5
+) -> dict:
+    """
+    Predicts cancer risk using a neural network model trained on demographic and lifestyle data.
+
+    This tool evaluates 8 features to estimate the probability of cancer. It returns both a
+    binary prediction (0=No Cancer, 1=Cancer) and the probability score.
+
+    Args:
+        Age (int): Age in years.
+        Gender (int): Gender indicator (0=Female, 1=Male).
+        BMI (float): Body Mass Index (continuous value).
+        Smoking (int): Smoking status (0=No, 1=Yes).
+        GeneticRisk (int): Known genetic risk indicator (0=No, 1=Yes).
+        PhysicalActivity (int): Physical activity indicator (0=Low, 1=Moderate/High).
+        AlcoholIntake (int): Alcohol intake indicator (0=No/Low, 1=Moderate/High).
+        CancerHistory (int): Family or personal cancer history (0=No, 1=Yes).
+        threshold (float, optional): Probability threshold for positive prediction. Defaults to 0.5.
+
+    Returns:
+        dict: {
+            'prediction': int (0 or 1, where 1 indicates cancer risk),
+            'probability': float (rounded to 4 decimal places, risk probability)
+        }
+
+    Example:
+        result = predict_cancer_tool(
+            Age=55,
+            Gender=0,
+            BMI=29.4,
+            Smoking=1,
+            GeneticRisk=0,
+            PhysicalActivity=0,
+            AlcoholIntake=1,
+            CancerHistory=1
+        )
+        # Returns: {'prediction': 1, 'probability': 0.6412}
+    """
+    print(f"DEBUG: predict_cancer_tool called with args: {locals()}")
+    patient_data = {
+        "Age": Age,
+        "Gender": Gender,
+        "BMI": BMI,
+        "Smoking": Smoking,
+        "GeneticRisk": GeneticRisk,
+        "PhysicalActivity": PhysicalActivity,
+        "AlcoholIntake": AlcoholIntake,
+        "CancerHistory": CancerHistory,
+    }
+    result = predict_cancer(patient_data, threshold=threshold)
+    print(f"DEBUG: predict_cancer_tool result: {result}")
     return result
 
 @tool
@@ -251,6 +416,16 @@ AVAILABLE TOOLS:
    - Use ONLY when input contains or you can retrieve these features
    - Returns prediction (0 or 1) and probability
 
+4. ML Model (predict_stroke_risk_tool): Predict stroke risk
+   - Requires 17 specific features (age, gender, chest_pain, high_blood_pressure, irregular_heartbeat, shortness_of_breath, fatigue_weakness, dizziness, swelling_edema, neck_jaw_pain, excessive_sweating, persistent_cough, nausea_vomiting, chest_discomfort, cold_hands_feet, snoring_sleep_apnea, anxiety_doom)
+   - Use ONLY when input contains or you can retrieve these features
+   - Returns prediction (0 or 1) and probability
+
+5. ML Model (predict_cancer_tool): Predict cancer risk
+   - Requires 8 specific features (Age, Gender, BMI, Smoking, GeneticRisk, PhysicalActivity, AlcoholIntake, CancerHistory)
+   - Use ONLY when input contains or you can retrieve these features
+   - Returns prediction (0 or 1) and probability
+
 DECISION LOGIC:
 - Does input contain health features? → Consider using ML model
 - Do you need historical data for ML model? → Query databases
@@ -272,7 +447,12 @@ Remember: You are a processing node, not a conversational agent. Analyze input �
     toolkit = SQLDatabaseToolkit(db=db, llm=llm)
     
     # Combine all tools
-    all_tools = toolkit.get_tools() + [predict_heart_disease_tool, retrieve_from_vector_db]
+    all_tools = toolkit.get_tools() + [
+        predict_heart_disease_tool,
+        predict_stroke_risk_tool,
+        predict_cancer_tool,
+        retrieve_from_vector_db,
+    ]
     
     agent = create_agent(llm, all_tools, system_prompt=system_prompt)
     
