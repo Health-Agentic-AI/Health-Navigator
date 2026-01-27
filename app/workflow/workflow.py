@@ -591,6 +591,10 @@ def output_refiner_node(state: AgentState):
     
     # Extract refined content
     refined_output = response.content
+    # Normalize excessive blank lines to reduce spacing in the UI
+    import re
+    refined_output = re.sub(r"\r\n", "\n", str(refined_output))
+    refined_output = re.sub(r"\n{2,}", "\n", refined_output).strip()
     
     # Store refined output in state
     state["final_refined_medical_output"] = refined_output

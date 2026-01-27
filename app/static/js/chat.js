@@ -110,7 +110,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     // Check last message for interruption
                     const lastMsg = data.messages[data.messages.length - 1];
                     if (lastMsg && lastMsg.role === 'system_question') {
-                        showInterruptionAlert(lastMsg.content);
+                        hideInterruptionAlert();
                         updateStatus('waiting', 'Waiting for input');
                     } else {
                         hideInterruptionAlert();
@@ -330,7 +330,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         hideInterruptionAlert();
                     } else if (data.status === 'interrupted') {
                         appendMessage('system_question', data.question, true);
-                        showInterruptionAlert(data.question);
+                        hideInterruptionAlert();
                         updateStatus('waiting', 'Waiting for input');
                         messageInput.placeholder = "Please answer the question above...";
                         messageInput.focus();
@@ -379,6 +379,8 @@ document.addEventListener('DOMContentLoaded', function () {
         // Parse content
         if (role === 'assistant') {
             body.innerHTML = parseMarkdown(content);
+        } else if (role === 'system_question') {
+            body.innerHTML = parseMarkdown(formatSystemQuestion(content));
         } else if (role === 'error') {
             body.innerHTML = `<strong>Error:</strong> ${escapeHtml(content)}`;
         } else {
@@ -461,14 +463,22 @@ document.addEventListener('DOMContentLoaded', function () {
     function parseMarkdown(text) {
         if (!text) return '';
 
-        let html = escapeHtml(text);
+        // Normalize excessive blank lines from backend output
+        const normalized = String(text)
+            .replace(/\r\n/g, '\n')
+            .replace(/\n{2,}/g, '\n')
+            .trim();
+
+        let html = escapeHtml(normalized);
 
         // Headers
+        html = html.replace(/^#### (.+)$/gm, '<h4>$1</h4>');
         html = html.replace(/^### (.+)$/gm, '<h3>$1</h3>');
         html = html.replace(/^## (.+)$/gm, '<h2>$1</h2>');
 
-        // Bold
+        // Bold and italics
         html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+        html = html.replace(/\*(?!\s)(.+?)\*/g, '<em>$1</em>');
 
         // Horizontal rules
         html = html.replace(/^\*\*\*$/gm, '<hr>');
@@ -490,7 +500,8 @@ document.addEventListener('DOMContentLoaded', function () {
             return line;
         }).join('\n');
 
-        // Line breaks
+        // Remove newlines between tags, then add line breaks for remaining newlines
+        html = html.replace(/>\n</g, '><');
         html = html.replace(/\n/g, '<br>');
 
         // Cleanup empty paragraphs
@@ -498,6 +509,11 @@ document.addEventListener('DOMContentLoaded', function () {
         html = html.replace(/<p><br><\/p>/g, '');
 
         return html;
+    }
+
+    function formatSystemQuestion(text) {
+        const content = text ? String(text).trim() : '';
+        return `**▲ Additional information required**\n\n${content}`;
     }
 
     function escapeHtml(text) {
