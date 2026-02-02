@@ -47,37 +47,6 @@ The workflow is composed of several specialized nodes and agents that interact d
 
 This is the **core intelligence** of the system. The Medical Agent and Information Retriever Agent engage in an iterative dialogue, much like a physician consulting with a medical records specialist.
 
-#### How It Works
-
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                    REFLECTION LOOP (max N iterations)                │
-├─────────────────────────────────────────────────────────────────────┤
-│                                                                     │
-│   ┌─────────────────┐      INFORMATION REQUEST      ┌─────────────┐ │
-│   │  Medical Agent  │ ─────────────────────────────▶│  Retriever  │ │
-│   │                 │   "I need patient's blood    │    Agent    │ │
-│   │  Analyzes case  │    pressure readings from     │             │ │
-│   │  & identifies  │    the past 6 months"         │  Searches:  │ │
-│   │  gaps in info  │◀─────────────────────────────│  • Vector DB│ │
-│   └─────────────────┘      RETRIEVED DATA          │  • SQL DB   │ │
-│            │                  + new context         │  • Ask User│ │
-│            │                                       └─────────────┘ │
-│            │                                                      │
-│            ▼                                                      │
-│   ┌─────────────────┐                                            │
-│   │  Satisfied?     │    No ───────────────────────────────┐     │
-│   └─────────────────┘                                       │     │
-│            │ Yes                                            │     │
-│            ▼                                                │     │
-│   ┌─────────────────┐                                       │     │
-│   │  Generate Final │◀──────────────────────────────────────┘     │
-│   │  Assessment     │                                              │
-│   └─────────────────┘                                              │
-│                                                                     │
-└─────────────────────────────────────────────────────────────────────┘
-```
-
 #### Step-by-Step Breakdown
 
 | Step | Agent | Action | Example |
