@@ -549,7 +549,7 @@
    IMPROVED SPACING UTILITIES
    ================== */
 .section-spacer {
-    padding: var(--spacing-2xl) 0;
+    padding: var(--spacing-3xl) 0;
 }
 
 .section-spacer-sm {
@@ -557,7 +557,7 @@
 }
 
 .section-spacer-lg {
-    padding: var(--spacing-2xl) 0;
+    padding: var(--spacing-3xl) 0;
 }
 
 .content-spacer {
@@ -566,17 +566,39 @@
     padding: 0 var(--spacing-lg);
 }
 
+/* Vertical stack for consistent spacing */
+.stack > * + * {
+    margin-top: var(--spacing-md);
+}
+
+.stack-lg > * + * {
+    margin-top: var(--spacing-lg);
+}
+
+.stack-xl > * + * {
+    margin-top: var(--spacing-xl);
+}
+
 /* Card spacing improvements */
 .card {
     margin-bottom: var(--spacing-lg);
 }
 
+/* Form group spacing */
 .form-group + .form-group {
-    margin-top: var(--spacing-md);
+    margin-top: var(--spacing-lg);
+}
+
+.form-row + .form-group {
+    margin-top: var(--spacing-lg);
+}
+
+.form-group + .form-row {
+    margin-top: var(--spacing-lg);
 }
 
 .form-row + .form-row {
-    margin-top: var(--spacing-md);
+    margin-top: var(--spacing-lg);
 }
 
 /* Auth page spacing improvements */
@@ -599,6 +621,53 @@
 
 .message-wrapper + .message-wrapper {
     margin-top: var(--spacing-lg);
+}
+
+/* Element to element spacing */
+h1, h2, h3, h4, h5, h6 {
+    line-height: 1.2;
+}
+
+h1 + p,
+h2 + p,
+h3 + p,
+h4 + p,
+h5 + p,
+h6 + p {
+    margin-top: var(--spacing-sm);
+}
+
+p + h1,
+p + h2,
+p + h3,
+p + h4,
+p + h5,
+p + h6 {
+    margin-top: var(--spacing-xl);
+}
+
+/* List spacing */
+ul, ol {
+    padding-left: var(--spacing-xl);
+}
+
+li + li {
+    margin-top: var(--spacing-sm);
+}
+
+/* Divider with spacing */
+.divider {
+    height: 1px;
+    background: var(--color-border);
+    margin: var(--spacing-xl) 0;
+}
+
+.divider-sm {
+    margin: var(--spacing-md) 0;
+}
+
+.divider-lg {
+    margin: var(--spacing-2xl) 0;
 }
 
 /* ==================
