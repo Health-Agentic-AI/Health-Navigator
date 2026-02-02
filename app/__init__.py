@@ -1,3 +1,8 @@
+"""
+Health Navigator - Flask Application Factory
+Centralized application initialization with configuration management
+"""
+
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
@@ -5,11 +10,8 @@ from flask_wtf.csrf import CSRFProtect
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 import os
-from datetime import timedelta
-from dotenv import load_dotenv
 
-load_dotenv(r'C:\My Projects\Health-Navigator\credentials.env')
-
+# Initialize extensions (bind later in create_app)
 db = SQLAlchemy()
 migrate = Migrate()
 csrf = CSRFProtect()
@@ -19,51 +21,35 @@ limiter = Limiter(
     storage_uri=os.environ.get("REDIS_URL", "memory://")
 )
 
-def create_app():
+
+def create_app(config=None):
+    """
+    Application factory pattern for creating Flask app.
+
+    Args:
+        config: Optional AppConfig instance. If None, loads from environment.
+
+    Returns:
+        Flask: Configured Flask application
+    """
     app = Flask(__name__)
 
-    # Database Configuration - PostgreSQL
-    # Using psycopg2 as driver
-    app.config['SQLALCHEMY_DATABASE_URI'] = f'postgresql+psycopg2://{os.environ.get("POSTGRES_USERNAME", "postgres")}:{os.environ.get("POSTGRES_PASSWORD", "password")}@{os.environ.get("POSTGRES_HOST", "localhost")}:{os.environ.get("POSTGRES_PORT", "5432")}/{os.environ.get("DATABASE_NAME", "medical_db")}'
-    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-    app.config['SECRET_KEY'] = os.environ.get("FLASK_SECRET_KEY", "dev-key-please-change")
+    # Load configuration
+    from app.config import AppConfig, init_app as init_config
+    if config is None:
+        config = AppConfig.from_env()
 
-    # Security Configuration - Session
-    app.config.update(
-        # Session cookie security
-        SESSION_COOKIE_SECURE=os.environ.get("SESSION_COOKIE_SECURE", "False") == "True",
-        SESSION_COOKIE_HTTPONLY=True,
-        SESSION_COOKIE_SAMESITE='Lax',
-        PERMANENT_SESSION_LIFETIME=timedelta(hours=24),
-        SESSION_REFRESH_EACH_REQUEST=True,
-    )
+    # Validate and apply configuration
+    config.validate()
+    init_config(app, config)
 
-    # CSRF Configuration
-    app.config['WTF_CSRF_TIME_LIMIT'] = None  # No timeout for CSRF tokens
-    app.config['WTF_CSRF_SSL_STRICT'] = True  # Require HTTPS for CSRF in production
+    # Store config in app for access
+    app.config['app_config'] = config
 
-    # Initialize extensions
-    db.init_app(app)
-    migrate.init_app(app, db)
-    csrf.init_app(app)
-    limiter.init_app(app)
-
-    # Setup structured logging
-    from app.logging_config import setup_logging, add_request_id_middleware
-    setup_logging(app)
-    add_request_id_middleware(app)
-
-    # Initialize model registry
-    from app.workflow.model_registry import init_default_models
-    try:
-        init_default_models()
-        app.logger.info("Model registry initialized with default models")
-    except Exception as e:
-        app.logger.warning(f"Could not initialize model registry: {e}")
-
-    # Security headers
+    # Security headers middleware
     @app.after_request
     def add_security_headers(response):
+        """Add security headers to all responses."""
         # Content Security Policy
         csp = (
             "default-src 'self'; "
@@ -84,11 +70,12 @@ def create_app():
         response.headers['Permissions-Policy'] = 'geolocation=(), microphone=(), camera=()'
 
         # HSTS only in production
-        if os.environ.get("FLASK_ENV") != "development":
+        if config.env == 'production':
             response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
 
         return response
 
+    # Register blueprints
     from app.routes import main_bp
     app.register_blueprint(main_bp)
 
