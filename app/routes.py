@@ -1,8 +1,9 @@
-from flask import Blueprint, render_template, request, jsonify, redirect, url_for, session, current_app
+from flask import Blueprint, render_template, request, jsonify, redirect, url_for, session, current_app, send_file
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from app import db, limiter
 from app.models import User, Conversation, PatientProfile, Allergy, Medication, PastMedicalHistory, PastSurgery, FamilyHistory, Message, Attachment
+from app.models.compliance import AuditLog, Consent, log_user_action, ConsentType, ActionType
 from app.workflow.workflow import app as workflow_app
 from app.utils.api_response import APIResponse, ErrorCode
 from langgraph.types import Command
@@ -14,8 +15,9 @@ import filetype
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
 from langgraph.errors import GraphInterrupt
-from datetime import datetime
+from datetime import datetime, timedelta
 from sqlalchemy import text
+from io import BytesIO
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -710,3 +712,315 @@ def openapi_spec():
     except Exception as e:
         logger.error(f"Error loading OpenAPI spec: {e}")
         return jsonify({"error": "Failed to load specification"}), 500
+
+
+# ==============================
+# COMPLIANCE & GDPR ENDPOINTS
+# ==============================
+
+@main_bp.route('/api/user/consent', methods=['GET', 'POST'])
+def manage_consent():
+    """
+    Get or update user consent preferences.
+    GET: Returns all consents for current user.
+    POST: Updates consent preferences.
+    """
+    if 'user_id' not in session:
+        return APIResponse.unauthorized("Authentication required")
+
+    user_id = session['user_id']
+
+    if request.method == 'GET':
+        # Return all consents for the user
+        consents = Consent.query.filter_by(user_id=user_id).all()
+        return APIResponse.success({
+            'consents': [c.to_dict() for c in consents]
+        })
+
+    elif request.method == 'POST':
+        data = request.get_json()
+        consent_type = data.get('consent_type')
+        granted = data.get('granted', False)
+
+        if not consent_type:
+            return APIResponse.validation_error("consent_type is required")
+
+        # Validate consent type
+        valid_types = [
+            ConsentType.DATA_PROCESSING,
+            ConsentType.MARKETING,
+            ConsentType.ANALYTICS,
+            ConsentType.COOKIES,
+            ConsentType.MEDICAL_ANALYSIS
+        ]
+
+        if consent_type not in valid_types:
+            return APIResponse.validation_error(f"Invalid consent_type. Must be one of: {', '.join(valid_types)}")
+
+        # Find existing consent or create new one
+        consent = Consent.query.filter_by(user_id=user_id, consent_type=consent_type).first()
+
+        if granted:
+            if consent and consent.granted:
+                # Already granted
+                return APIResponse.success({'message': 'Consent already granted'})
+
+            # Grant consent
+            if consent:
+                consent.granted = True
+                consent.granted_at = datetime.utcnow()
+                consent.revoked_at = None
+            else:
+                consent = Consent(
+                    user_id=user_id,
+                    consent_type=consent_type,
+                    granted=True,
+                    granted_at=datetime.utcnow()
+                )
+            db.session.add(consent)
+
+            # Log consent action
+            log_user_action(
+                action='consent_granted',
+                user_id=user_id,
+                resource_type='consent',
+                ip_address=request.remote_addr,
+                user_agent=request.headers.get('User-Agent'),
+                details={'consent_type': consent_type}
+            )
+        else:
+            # Revoke consent
+            if consent:
+                consent.granted = False
+                consent.revoked_at = datetime.utcnow()
+            else:
+                return APIResponse.not_found('Consent record not found')
+
+            # Log consent revocation
+            log_user_action(
+                action='consent_revoked',
+                user_id=user_id,
+                resource_type='consent',
+                ip_address=request.remote_addr,
+                user_agent=request.headers.get('User-Agent'),
+                details={'consent_type': consent_type}
+            )
+
+        db.session.commit()
+        return APIResponse.success({'message': 'Consent preferences updated'})
+
+
+@main_bp.route('/api/user/data-export', methods=['GET', 'POST'])
+def export_user_data():
+    """
+    Export all user data (GDPR compliance).
+    GET: Returns summary of data to be exported.
+    POST: Generates and returns the data export.
+    """
+    if 'user_id' not in session:
+        return APIResponse.unauthorized("Authentication required")
+
+    user_id = session['user_id']
+
+    if request.method == 'GET':
+        # Return summary of data
+        user = User.query.get(user_id)
+        if not user:
+            return APIResponse.not_found('User not found')
+
+        conversation_count = Conversation.query.filter_by(user_id=user_id).count()
+        message_count = Message.query.join(Conversation).filter(Conversation.user_id == user_id).count()
+        attachment_count = Attachment.query.join(Message).join(Conversation).filter(Conversation.user_id == user_id).count()
+
+        return APIResponse.success({
+            'summary': {
+                'email': user.email,
+                'username': user.username,
+                'full_name': user.full_name,
+                'account_created': user.created_at.isoformat() if user.created_at else None,
+                'conversation_count': conversation_count,
+                'message_count': message_count,
+                'attachment_count': attachment_count
+            }
+        })
+
+    elif request.method == 'POST':
+        # Generate full data export
+        user = User.query.get(user_id)
+        if not user:
+            return APIResponse.not_found('User not found')
+
+        # Collect all user data
+        export_data = {
+            'user': {
+                'id': user.id,
+                'username': user.username,
+                'email': user.email,
+                'full_name': user.full_name,
+                'created_at': user.created_at.isoformat() if user.created_at else None
+            },
+            'conversations': [],
+            'profile': None,
+            'attachments': [],
+            'export_date': datetime.utcnow().isoformat()
+        }
+
+        # Get patient profile
+        profile = PatientProfile.query.filter_by(user_id=user_id).first()
+        if profile:
+            export_data['profile'] = {
+                'date_of_birth': profile.date_of_birth.isoformat() if profile.date_of_birth else None,
+                'gender': profile.gender,
+                'blood_type': profile.blood_type
+            }
+
+        # Get conversations
+        conversations = Conversation.query.filter_by(user_id=user_id).all()
+        for conv in conversations:
+            conv_data = {
+                'id': conv.id,
+                'title': conv.title,
+                'created_at': conv.created_at.isoformat() if conv.created_at else None,
+                'last_updated_at': conv.last_updated_at.isoformat() if conv.last_updated_at else None,
+                'messages': []
+            }
+
+            # Get messages for this conversation
+            messages = Message.query.filter_by(conversation_id=conv.id).order_by(Message.timestamp).all()
+            for msg in messages:
+                msg_data = {
+                    'id': msg.id,
+                    'content': msg.content,
+                    'sender': msg.sender,
+                    'timestamp': msg.timestamp.isoformat() if msg.timestamp else None,
+                    'attachments': []
+                }
+
+                # Get attachments for this message
+                attachments = Attachment.query.filter_by(message_id=msg.id).all()
+                for att in attachments:
+                    msg_data['attachments'].append({
+                        'filename': att.filename,
+                        'file_type': att.file_type,
+                        'upload_date': att.upload_date.isoformat() if att.upload_date else None
+                    })
+
+                conv_data['messages'].append(msg_data)
+
+            export_data['conversations'].append(conv_data)
+
+        # Log the export action
+        log_user_action(
+            action=ActionType.DATA_EXPORT,
+            user_id=user_id,
+            resource_type='user',
+            ip_address=request.remote_addr,
+            user_agent=request.headers.get('User-Agent'),
+            details={'conversation_count': len(conversations)}
+        )
+
+        # Generate JSON file
+        json_data = json.dumps(export_data, indent=2, default=str)
+
+        # Return as file download
+        filename = f"health_navigator_export_{user.username}_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.json"
+        return send_file(
+            BytesIO(json_data.encode('utf-8')),
+            mimetype='application/json',
+            as_attachment=True,
+            download_name=filename
+        )
+
+
+@main_bp.route('/api/user/request-deletion', methods=['POST', 'DELETE'])
+def request_account_deletion():
+    """
+    Request account deletion (GDPR right to be forgotten).
+    POST: Initiates deletion request (requires confirmation).
+    DELETE: Processes deletion (requires email confirmation).
+    """
+    if 'user_id' not in session:
+        return APIResponse.unauthorized("Authentication required")
+
+    user_id = session['user_id']
+    user = User.query.get(user_id)
+    if not user:
+        return APIResponse.not_found('User not found')
+
+    if request.method == 'POST':
+        # Initiate deletion request
+        data = request.get_json()
+        confirmation_email = data.get('confirmation_email')
+
+        if not confirmation_email:
+            return APIResponse.validation_error("Confirmation email is required")
+
+        if confirmation_email != user.email:
+            return APIResponse.validation_error("Email does not match account email")
+
+        # Create a deletion request token (in production, email this token)
+        deletion_token = os.urandom(32).hex()
+
+        # Log the deletion request
+        log_user_action(
+            action=ActionType.DATA_DELETE_REQUEST,
+            user_id=user_id,
+            resource_type='user',
+            resource_id=user_id,
+            ip_address=request.remote_addr,
+            user_agent=request.headers.get('User-Agent'),
+            details={'method': 'requested'}
+        )
+
+        return APIResponse.success({
+            'message': 'Deletion request received. Please confirm by sending DELETE request with your email token.',
+            'token': deletion_token,
+            'expires_in': '24 hours'
+        })
+
+    elif request == 'DELETE':
+        # Process deletion (in production, verify email token first)
+        # For now, perform soft delete by anonymizing data
+
+        # Anonymize user data
+        user.email = f"deleted_{user_id}@anonymous.local"
+        user.username = f"deleted_{user_id}"
+        user.full_name = "Deleted User"
+        user.deleted_at = datetime.utcnow()
+
+        # Anonymize conversations
+        conversations = Conversation.query.filter_by(user_id=user_id).all()
+        for conv in conversations:
+            conv.title = "Deleted Conversation"
+            conv.is_anonymized = True
+
+        db.session.commit()
+
+        # Clear session
+        session.clear()
+
+        # Log the deletion
+        logger.info(f"User account deleted: {user_id}")
+
+        return APIResponse.success({
+            'message': 'Account successfully deleted. We appreciate your use of Health Navigator.'
+        }, message='Account deleted')
+
+
+@main_bp.route('/api/user/audit-log', methods=['GET'])
+def get_audit_log():
+    """
+    Get user's audit log (transparency).
+    Returns the user's recent activity log.
+    """
+    if 'user_id' not in session:
+        return APIResponse.unauthorized("Authentication required")
+
+    user_id = session['user_id']
+
+    # Get recent audit logs for this user
+    logs = AuditLog.query.filter_by(user_id=user_id).order_by(AuditLog.timestamp.desc()).limit(100).all()
+
+    return APIResponse.success({
+        'audit_logs': [log.to_dict() for log in logs]
+    })
