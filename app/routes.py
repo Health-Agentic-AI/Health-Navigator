@@ -683,3 +683,30 @@ def liveness_check():
         "status": "alive",
         "timestamp": datetime.utcnow().isoformat()
     }), 200
+
+
+@main_bp.route('/docs', methods=['GET'])
+def api_docs():
+    """
+    API documentation page.
+    Renders the OpenAPI/Swagger documentation.
+    """
+    return render_template('api_docs.html')
+
+
+@main_bp.route('/api/openapi.yaml', methods=['GET'])
+def openapi_spec():
+    """
+    Serve the OpenAPI specification as YAML.
+    """
+    import yaml
+    try:
+        openapi_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'openapi.yaml')
+        with open(openapi_path, 'r') as f:
+            spec = yaml.safe_load(f)
+        return jsonify(spec), 200
+    except FileNotFoundError:
+        return jsonify({"error": "OpenAPI specification not found"}), 404
+    except Exception as e:
+        logger.error(f"Error loading OpenAPI spec: {e}")
+        return jsonify({"error": "Failed to load specification"}), 500

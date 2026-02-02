@@ -1,0 +1,1153 @@
+openapi: 3.0.3
+info:
+  title: Health Navigator API
+  description: |
+    AI-powered medical consultation platform with secure, HIPAA-aligned workflows.
+
+    **Features:**
+    - Multi-agent AI analysis for medical consultations
+    - Heart disease, stroke, and cancer risk predictions
+    - Medical image analysis (X-rays, MRIs, CT scans)
+    - Secure file upload with encryption
+    - Real-time chat with health professionals
+
+    **Disclaimer:** This API is for informational purposes only and should not be used as a substitute for professional medical advice.
+  version: 2.0.0
+  contact:
+    name: Health Navigator Support
+    email: support@healthnavigator.ai
+    url: https://healthnavigator.ai
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:5000
+    description: Local development server
+  - url: https://api.healthnavigator.ai/v1
+    description: Production API server
+
+tags:
+  - name: Authentication
+    description: User authentication and session management
+  - name: Health
+    description: Health check and monitoring endpoints
+  - name: Chat
+    description: AI consultation chat endpoints
+  - name: Predictions
+    description: ML model prediction endpoints
+  - name: Profile
+    description: Patient profile management
+
+paths:
+  # ==============================
+  # Authentication
+  # ==============================
+  /login:
+    post:
+      tags: [Authentication]
+      summary: User login
+      description: Authenticate user and create session
+      security:
+        - csrfToken: []
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required: [username, password]
+              properties:
+                username:
+                  type: string
+                  example: johndoe
+                password:
+                  type: string
+                  format: password
+                  example: SecurePass123!
+                remember:
+                  type: boolean
+                  default: false
+      responses:
+        '200':
+          description: Login successful
+          headers:
+            Set-Cookie:
+              description: Session cookie
+              schema:
+                type: string
+          content:
+            text/html:
+              schema:
+                type: string
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
+  /register:
+    post:
+      tags: [Authentication]
+      summary: User registration
+      description: Create a new user account
+      security:
+        - csrfToken: []
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required: [username, full_name, email, password]
+              properties:
+                username:
+                  type: string
+                  minLength: 3
+                  maxLength: 50
+                  example: johndoe
+                full_name:
+                  type: string
+                  example: John Doe
+                email:
+                  type: string
+                  format: email
+                  example: john@example.com
+                password:
+                  type: string
+                  format: password
+                  minLength: 8
+                  example: SecurePass123!
+      responses:
+        '201':
+          description: Registration successful
+          content:
+            text/html:
+              schema:
+                type: string
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /logout:
+    post:
+      tags: [Authentication]
+      summary: User logout
+      description: End user session
+      responses:
+        '200':
+          description: Logout successful
+          content:
+            text/html:
+              schema:
+                type: string
+
+  # ==============================
+  # Health Check
+  # ==============================
+  /health:
+    get:
+      tags: [Health]
+      summary: Basic health check
+      description: Check if the API is running
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: healthy
+                  timestamp:
+                    type: string
+                    format: date-time
+      headers:
+        X-Request-ID:
+          $ref: '#/components/headers/RequestId'
+
+  /health/detailed:
+    get:
+      tags: [Health]
+      summary: Detailed health check
+      description: Comprehensive health status including database
+      responses:
+        '200':
+          description: Detailed health status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [healthy, degraded, unhealthy]
+                  timestamp:
+                    type: string
+                    format: date-time
+                  version:
+                    type: string
+                  services:
+                    type: object
+                    properties:
+                      database:
+                        type: object
+                        properties:
+                          status:
+                            type: string
+                          latency_ms:
+                            type: number
+        '503':
+          description: Service unhealthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthError'
+
+  /health/models:
+    get:
+      tags: [Health]
+      summary: ML models health check
+      description: Check availability of all ML models
+      responses:
+        '200':
+          description: Models health status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [healthy, degraded]
+                  timestamp:
+                    type: string
+                    format: date-time
+                  models:
+                    type: object
+                    additionalProperties:
+                      type: object
+                      properties:
+                        status:
+                          type: string
+                          enum: [healthy, unhealthy]
+                        error:
+                          type: string
+
+  /health/ready:
+    get:
+      tags: [Health]
+      summary: Readiness check
+      description: Kubernetes readiness probe
+      responses:
+        '200':
+          description: Service is ready
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthStatus'
+        '503':
+          description: Service not ready
+
+  /health/live:
+    get:
+      tags: [Health]
+      summary: Liveness check
+      description: Kubernetes liveness probe
+      responses:
+        '200':
+          description: Service is alive
+
+  # ==============================
+  # Chat & Consultation
+  # ==============================
+  /api/chat:
+    post:
+      tags: [Chat]
+      summary: Send chat message
+      description: Send a message to the AI consultation agent
+      security:
+        - sessionAuth: []
+        - csrfToken: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [message]
+              properties:
+                message:
+                  type: string
+                  description: User's message or query
+                  example: I've been experiencing chest pain lately
+                conversation_id:
+                  type: string
+                  format: uuid
+                  description: Continue existing conversation
+                files:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+                  description: Medical reports or images to analyze
+      responses:
+        '200':
+          description: Message processed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    type: object
+                    properties:
+                      conversation_id:
+                        type: string
+                        format: uuid
+                      message:
+                        type: string
+                      sender:
+                        type: string
+                        enum: [assistant, system_question]
+                      attachments:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Attachment'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '413':
+          $ref: '#/components/responses/RequestTooLarge'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
+  /api/chat/respond:
+    post:
+      tags: [Chat]
+      summary: Respond to interruption question
+      description: Provide additional information requested by the AI agent
+      security:
+        - sessionAuth: []
+        - csrfToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [conversation_id, response]
+              properties:
+                conversation_id:
+                  type: string
+                  format: uuid
+                response:
+                  type: string
+                  example: Yes, I do have a family history of heart disease
+      responses:
+        '200':
+          description: Response processed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatResponse'
+
+  /api/conversations:
+    get:
+      tags: [Chat]
+      summary: List user conversations
+      description: Get all conversations for current user
+      security:
+        - sessionAuth: []
+      responses:
+        '200':
+          description: List of conversations
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Conversation'
+
+  /api/conversations/{id}:
+    get:
+      tags: [Chat]
+      summary: Get conversation details
+      description: Get full conversation history
+      security:
+        - sessionAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ConversationId'
+      responses:
+        '200':
+          description: Conversation details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/ConversationDetail'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/conversations/{id}/export:
+    get:
+      tags: [Chat]
+      summary: Export conversation
+      description: Export conversation as PDF or text
+      security:
+        - sessionAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ConversationId'
+        - name: format
+          in: query
+          schema:
+            type: string
+            enum: [pdf, txt, json]
+            default: pdf
+      responses:
+        '200':
+          description: Exported file
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+            text/plain:
+              schema:
+                type: string
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConversationDetail'
+
+  # ==============================
+  # Predictions
+  # ==============================
+  /api/predict/heart-disease:
+    post:
+      tags: [Predictions]
+      summary: Heart disease risk prediction
+      description: Predict heart disease risk based on patient data
+      security:
+        - sessionAuth: []
+        - csrfToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HeartDiseasePredictionRequest'
+      responses:
+        '200':
+          description: Prediction results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/HeartDiseasePredictionResult'
+
+  /api/predict/stroke:
+    post:
+      tags: [Predictions]
+      summary: Stroke risk prediction
+      description: Predict stroke risk based on patient data
+      security:
+        - sessionAuth: []
+        - csrfToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StrokePredictionRequest'
+      responses:
+        '200':
+          description: Prediction results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/StrokePredictionResult'
+
+  /api/predict/cancer:
+    post:
+      tags: [Predictions]
+      summary: Cancer risk prediction
+      description: Predict cancer risk based on symptoms and history
+      security:
+        - sessionAuth: []
+        - csrfToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CancerPredictionRequest'
+      responses:
+        '200':
+          description: Prediction results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/CancerPredictionResult'
+
+  /api/predict/medical-image:
+    post:
+      tags: [Predictions]
+      summary: Medical image analysis
+      description: Analyze medical images (X-ray, MRI, CT scan)
+      security:
+        - sessionAuth: []
+        - csrfToken: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [image]
+              properties:
+                image:
+                  type: string
+                  format: binary
+                image_type:
+                  type: string
+                  enum: [xray, mri, ct_scan, other]
+      responses:
+        '200':
+          description: Analysis results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/MedicalImageAnalysisResult'
+
+  # ==============================
+  # Profile Management
+  # ==============================
+  /api/profile:
+    get:
+      tags: [Profile]
+      summary: Get patient profile
+      description: Get current user's patient profile
+      security:
+        - sessionAuth: []
+      responses:
+        '200':
+          description: Patient profile
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/PatientProfile'
+
+    put:
+      tags: [Profile]
+      summary: Update patient profile
+      description: Update patient profile information
+      security:
+        - sessionAuth: []
+        - csrfToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatientProfileUpdateRequest'
+      responses:
+        '200':
+          description: Profile updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PatientProfile'
+
+# ==============================
+# Components
+# ==============================
+components:
+  securitySchemes:
+    csrfToken:
+      type: apiKey
+      in: header
+      name: X-CSRF-Token
+      description: CSRF protection token
+    sessionAuth:
+      type: apiKey
+      in: cookie
+      name: session
+      description: Session cookie authentication
+
+  parameters:
+    ConversationId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Conversation ID
+      example: 550e8400-e29b-41d4-a716-446655440000
+
+  headers:
+    RequestId:
+      description: Unique request ID for tracing
+      schema:
+        type: string
+        format: uuid
+      example: 550e8400-e29b-41d4-a716-446655440000
+
+  responses:
+    Unauthorized:
+      description: Authentication required
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            status: error
+            error:
+              code: UNAUTHORIZED
+              message: Authentication required
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            status: error
+            error:
+              code: NOT_FOUND
+              message: Resource not found
+
+    ValidationError:
+      description: Validation error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ValidationError'
+
+    Conflict:
+      description: Resource already exists
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            status: error
+            error:
+              code: CONFLICT
+              message: Username already exists
+
+    RateLimited:
+      description: Too many requests
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            status: error
+            error:
+              code: RATE_LIMIT_EXCEEDED
+              message: Too many requests, please try again later
+
+    RequestTooLarge:
+      description: Request entity too large
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            status: error
+            error:
+              code: FILE_TOO_LARGE
+              message: Total file size exceeds the limit of 50MB
+
+  schemas:
+    Error:
+      type: object
+      required: [status, error]
+      properties:
+        status:
+          type: string
+          enum: [error]
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+              example: VALIDATION_ERROR
+            message:
+              type: string
+              example: Invalid input data
+            details:
+              type: object
+
+    ValidationError:
+      type: object
+      required: [status, error]
+      properties:
+        status:
+          type: string
+          enum: [error]
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              example: VALIDATION_ERROR
+            message:
+              type: string
+            details:
+              type: object
+              properties:
+                fields:
+                  type: object
+                  additionalProperties:
+                    type: array
+                    items:
+                      type: string
+
+    HealthStatus:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [healthy, degraded, unhealthy]
+        timestamp:
+          type: string
+          format: date-time
+
+    HealthError:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [unhealthy]
+        timestamp:
+          type: string
+          format: date-time
+        services:
+          type: object
+        error:
+          type: string
+
+    Attachment:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        filename:
+          type: string
+        file_type:
+          type: string
+          enum: [image, document]
+        upload_date:
+          type: string
+          format: date-time
+
+    Conversation:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        last_updated_at:
+          type: string
+          format: date-time
+        message_count:
+          type: integer
+
+    ConversationDetail:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        messages:
+          type: array
+          items:
+            $ref: '#/components/schemas/Message'
+
+    Message:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        content:
+          type: string
+        sender:
+          type: string
+          enum: [user, assistant, system_question]
+        timestamp:
+          type: string
+          format: date-time
+        attachments:
+          type: array
+          items:
+            $ref: '#/components/schemas/Attachment'
+
+    ChatResponse:
+      type: object
+      properties:
+        status:
+          type: string
+        data:
+          type: object
+          properties:
+            conversation_id:
+              type: string
+              format: uuid
+            requires_response:
+              type: boolean
+            message:
+              type: string
+
+    HeartDiseasePredictionRequest:
+      type: object
+      required: [age, sex, cp, trestbps, chol, fbs, restecg, thalach, exang, oldpeak, slope, ca, thal]
+      properties:
+        age:
+          type: integer
+          minimum: 1
+          maximum: 120
+          description: Age in years
+        sex:
+          type: integer
+          enum: [0, 1]
+          description: 0 = female, 1 = male
+        cp:
+          type: integer
+          minimum: 0
+          maximum: 3
+          description: Chest pain type (0-3)
+        trestbps:
+          type: integer
+          description: Resting blood pressure (mm Hg)
+        chol:
+          type: integer
+          description: Serum cholesterol (mg/dl)
+        fbs:
+          type: integer
+          enum: [0, 1]
+          description: Fasting blood sugar > 120 mg/dl
+        restecg:
+          type: integer
+          minimum: 0
+          maximum: 2
+          description: Resting ECG results
+        thalach:
+          type: integer
+          description: Maximum heart rate achieved
+        exang:
+          type: integer
+          enum: [0, 1]
+          description: Exercise induced angina
+        oldpeak:
+          type: number
+          description: ST depression induced by exercise
+        slope:
+          type: integer
+          minimum: 0
+          maximum: 2
+          description: Slope of peak exercise ST segment
+        ca:
+          type: integer
+          minimum: 0
+          maximum: 3
+          description: Number of major vessels
+        thal:
+          type: integer
+          minimum: 0
+          maximum: 3
+          description: Thalassemia (0 = normal, 1 = fixed defect, 2 = reversable defect)
+
+    HeartDiseasePredictionResult:
+      type: object
+      properties:
+        prediction:
+          type: string
+          enum: [Positive, Negative]
+        confidence:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+        risk_factors:
+          type: array
+          items:
+            type: string
+        recommendations:
+          type: array
+          items:
+            type: string
+
+    StrokePredictionRequest:
+      type: object
+      required: [gender, age, hypertension, heart_disease, ever_married, work_type, residence_type, avg_glucose_level, bmi]
+      properties:
+        gender:
+          type: integer
+          enum: [0, 1]
+        age:
+          type: integer
+        hypertension:
+          type: integer
+          enum: [0, 1]
+        heart_disease:
+          type: integer
+          enum: [0, 1]
+        ever_married:
+          type: integer
+          enum: [0, 1]
+        work_type:
+          type: integer
+          minimum: 0
+          maximum: 4
+        residence_type:
+          type: integer
+          enum: [0, 1]
+        avg_glucose_level:
+          type: number
+        bmi:
+          type: number
+        smoking_status:
+          type: integer
+          minimum: 0
+          maximum: 3
+
+    StrokePredictionResult:
+      type: object
+      properties:
+        prediction:
+          type: string
+          enum: [High Risk, Low Risk]
+        probability:
+          type: number
+          format: float
+        risk_score:
+          type: number
+          format: float
+
+    CancerPredictionRequest:
+      type: object
+      required: [symptoms]
+      properties:
+        symptoms:
+          type: array
+          items:
+            type: string
+        age:
+          type: integer
+        gender:
+          type: string
+          enum: [male, female, other]
+        family_history:
+          type: boolean
+        lifestyle_factors:
+          type: object
+          properties:
+            smoking:
+              type: boolean
+            alcohol:
+              type: boolean
+            diet:
+              type: string
+
+    CancerPredictionResult:
+      type: object
+      properties:
+        risk_level:
+          type: string
+          enum: [Low, Medium, High]
+        confidence:
+          type: number
+          format: float
+        recommended screenings:
+          type: array
+          items:
+            type: string
+
+    MedicalImageAnalysisResult:
+      type: object
+      properties:
+        findings:
+          type: array
+          items:
+            type: object
+            properties:
+              type:
+                type: string
+                example: Abnormality detected
+              location:
+                type: string
+              confidence:
+                type: number
+                format: float
+        overall_assessment:
+          type: string
+        recommendations:
+          type: array
+          items:
+            type: string
+
+    PatientProfile:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        date_of_birth:
+          type: string
+          format: date
+        gender:
+          type: string
+          enum: [male, female, other]
+        blood_type:
+          type: string
+          pattern: ^[A-Z][+-]?$
+        allergies:
+          type: array
+          items:
+            $ref: '#/components/schemas/Allergy'
+        medications:
+          type: array
+          items:
+            $ref: '#/components/schemas/Medication'
+        medical_history:
+          type: array
+          items:
+            $ref: '#/components/schemas/MedicalHistory'
+        family_history:
+          type: array
+          items:
+            $ref: '#/components/schemas/FamilyHistory'
+
+    PatientProfileUpdateRequest:
+      type: object
+      properties:
+        date_of_birth:
+          type: string
+          format: date
+        gender:
+          type: string
+          enum: [male, female, other]
+        blood_type:
+          type: string
+        allergies:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              severity:
+                type: string
+                enum: [mild, moderate, severe]
+
+    Allergy:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        allergen:
+          type: string
+        severity:
+          type: string
+          enum: [mild, moderate, severe]
+        reactions:
+          type: string
+
+    Medication:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        dosage:
+          type: string
+        frequency:
+          type: string
+
+    MedicalHistory:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        condition:
+          type: string
+        diagnosed_date:
+          type: string
+          format: date
+        status:
+          type: string
+          enum: [active, resolved, chronic]
+
+    FamilyHistory:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        relationship:
+          type: string
+        condition:
+          type: string
+        notes:
+          type: string

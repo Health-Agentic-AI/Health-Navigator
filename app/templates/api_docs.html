@@ -1,0 +1,475 @@
+{% extends "base.html" %}
+
+{% block title %}API Documentation - Health Navigator{% endblock %}
+
+{% block extra_css %}
+<style>
+.api-docs-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: var(--spacing-2xl);
+}
+
+.docs-header {
+    margin-bottom: var(--spacing-2xl);
+    text-align: center;
+}
+
+.docs-header h1 {
+    font-family: var(--font-display);
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: var(--spacing-md);
+}
+
+.docs-header p {
+    color: var(--color-text-muted);
+    font-size: 1.125rem;
+}
+
+.docs-nav {
+    display: flex;
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-xl);
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.docs-nav a {
+    padding: var(--spacing-sm) var(--spacing-lg);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-full);
+    color: var(--color-text-secondary);
+    text-decoration: none;
+    transition: all var(--transition-base);
+}
+
+.docs-nav a:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+}
+
+.docs-layout {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: var(--spacing-2xl);
+}
+
+.docs-sidebar {
+    position: sticky;
+    top: 100px;
+    height: fit-content;
+    max-height: calc(100vh - 120px);
+    overflow-y: auto;
+}
+
+.docs-sidebar-section {
+    margin-bottom: var(--spacing-xl);
+}
+
+.docs-sidebar-title {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--color-text-muted);
+    margin-bottom: var(--spacing-md);
+}
+
+.docs-sidebar-list {
+    list-style: none;
+    padding: 0;
+}
+
+.docs-sidebar-list li {
+    margin-bottom: var(--spacing-xs);
+}
+
+.docs-sidebar-list a {
+    display: block;
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-radius: var(--radius-md);
+    color: var(--color-text-secondary);
+    text-decoration: none;
+    transition: all var(--transition-fast);
+}
+
+.docs-sidebar-list a:hover {
+    background: var(--color-surface-hover);
+    color: var(--color-text-primary);
+}
+
+.docs-sidebar-list a.active {
+    background: rgba(99, 102, 241, 0.1);
+    color: var(--color-primary);
+}
+
+.docs-content {
+    background: var(--gradient-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-2xl);
+    padding: var(--spacing-2xl);
+}
+
+.endpoint-section {
+    margin-bottom: var(--spacing-2xl);
+    padding-bottom: var(--spacing-2xl);
+    border-bottom: 1px solid var(--color-border);
+}
+
+.endpoint-section:last-child {
+    border-bottom: none;
+}
+
+.endpoint-header {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-md);
+}
+
+.method-badge {
+    padding: var(--spacing-xs) var(--spacing-md);
+    border-radius: var(--radius-md);
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.method-get { background: rgba(34, 211, 238, 0.2); color: #22d3ee; }
+.method-post { background: rgba(16, 185, 129, 0.2); color: #14b8a6; }
+.method-put { background: rgba(251, 191, 36, 0.2); color: #fbbf24; }
+.method-patch { background: rgba(251, 146, 60, 0.2); color: #fb923c; }
+.method-delete { background: rgba(239, 68, 68, 0.2); color: #f43f5e; }
+
+.endpoint-path {
+    font-family: 'Courier New', monospace;
+    font-size: 0.9375rem;
+    color: var(--color-text-primary);
+}
+
+.endpoint-description {
+    color: var(--color-text-muted);
+    margin-bottom: var(--spacing-md);
+}
+
+.schema-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: var(--spacing-md) 0;
+}
+
+.schema-table th,
+.schema-table td {
+    padding: var(--spacing-md);
+    text-align: left;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.schema-table th {
+    font-weight: 600;
+    color: var(--color-text-secondary);
+}
+
+.schema-table tr:last-child td {
+    border-bottom: none;
+}
+
+.required-badge {
+    display: inline-block;
+    padding: 2px 6px;
+    background: rgba(239, 68, 68, 0.2);
+    color: var(--color-danger);
+    border-radius: var(--radius-sm);
+    font-size: 0.625rem;
+    font-weight: 600;
+    margin-left: var(--spacing-xs);
+}
+
+.code-block {
+    background: var(--color-bg-primary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-md);
+    overflow-x: auto;
+    margin: var(--spacing-md) 0;
+}
+
+.code-block pre {
+    margin: 0;
+    font-family: 'Courier New', monospace;
+    font-size: 0.875rem;
+    color: var(--color-text-secondary);
+}
+
+.disclaimer {
+    background: rgba(245, 158, 11, 0.1);
+    border: 1px solid rgba(245, 158, 11, 0.3);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-md) var(--spacing-lg);
+    margin-bottom: var(--spacing-xl);
+}
+
+.disclaimer p {
+    color: #fbbf24;
+    margin: 0;
+    font-size: 0.875rem;
+}
+
+@media (max-width: 1024px) {
+    .docs-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .docs-sidebar {
+        display: none;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="api-docs-container">
+    <div class="docs-header">
+        <h1>API Documentation</h1>
+        <p>RESTful API for integrating Health Navigator's AI-powered medical consultation platform</p>
+    </div>
+
+    <nav class="docs-nav">
+        <a href="#overview">Overview</a>
+        <a href="#authentication">Authentication</a>
+        <a href="#endpoints">Endpoints</a>
+        <a href="/api/openapi.yaml" download>Download OpenAPI Spec</a>
+    </nav>
+
+    <div class="disclaimer">
+        <p><strong>Medical Disclaimer:</strong> This API is for informational purposes only and should not be used as a substitute for professional medical advice.</p>
+    </div>
+
+    <div class="docs-layout">
+        <aside class="docs-sidebar">
+            <div class="docs-sidebar-section">
+                <div class="docs-sidebar-title">Authentication</div>
+                <ul class="docs-sidebar-list">
+                    <li><a href="#auth-login">POST /login</a></li>
+                    <li><a href="#auth-register">POST /register</a></li>
+                    <li><a href="#auth-logout">POST /logout</a></li>
+                </ul>
+            </div>
+
+            <div class="docs-sidebar-section">
+                <div class="docs-sidebar-title">Health Checks</div>
+                <ul class="docs-sidebar-list">
+                    <li><a href="#health">GET /health</a></li>
+                    <li><a href="#health-detailed">GET /health/detailed</a></li>
+                    <li><a href="#health-models">GET /health/models</a></li>
+                </ul>
+            </div>
+
+            <div class="docs-sidebar-section">
+                <div class="docs-sidebar-title">Chat</div>
+                <ul class="docs-sidebar-list">
+                    <li><a href="#chat-send">POST /api/chat</a></li>
+                    <li><a href="#chat-respond">POST /api/chat/respond</a></li>
+                    <li><a href="#conversations">GET /api/conversations</a></li>
+                </ul>
+            </div>
+
+            <div class="docs-sidebar-section">
+                <div class="docs-sidebar-title">Predictions</div>
+                <ul class="docs-sidebar-list">
+                    <li><a href="#predict-heart">POST /api/predict/heart-disease</a></li>
+                    <li><a href="#predict-stroke">POST /api/predict/stroke</a></li>
+                    <li><a href="#predict-cancer">POST /api/predict/cancer</a></li>
+                    <li><a href="#predict-image">POST /api/predict/medical-image</a></li>
+                </ul>
+            </div>
+        </aside>
+
+        <main class="docs-content">
+            <section id="overview" class="endpoint-section">
+                <h2>Overview</h2>
+                <p class="endpoint-description">
+                    The Health Navigator API provides endpoints for AI-powered medical consultations,
+                    risk predictions, and health data management. All endpoints return JSON responses
+                    with consistent formatting.
+                </p>
+                <p class="endpoint-description">
+                    <strong>Base URL:</strong> <code>https://api.healthnavigator.ai/v1</code>
+                </p>
+            </section>
+
+            <section id="authentication" class="endpoint-section">
+                <h2>Authentication</h2>
+                <p class="endpoint-description">
+                    Authentication is handled through session cookies. Include the session cookie
+                    from the login response in subsequent requests.
+                </p>
+            </section>
+
+            <section id="auth-login" class="endpoint-section">
+                <div class="endpoint-header">
+                    <span class="method-badge method-post">POST</span>
+                    <span class="endpoint-path">/login</span>
+                </div>
+                <p class="endpoint-description">Authenticate user and create session</p>
+
+                <h4>Request Body</h4>
+                <div class="code-block">
+                    <pre>{
+  "username": "johndoe",
+  "password": "SecurePass123!",
+  "remember": false
+}</pre>
+                </div>
+            </section>
+
+            <section id="auth-register" class="endpoint-section">
+                <div class="endpoint-header">
+                    <span class="method-badge method-post">POST</span>
+                    <span class="endpoint-path">/register</span>
+                </div>
+                <p class="endpoint-description">Create a new user account</p>
+            </section>
+
+            <section id="health" class="endpoint-section">
+                <div class="endpoint-header">
+                    <span class="method-badge method-get">GET</span>
+                    <span class="endpoint-path">/health</span>
+                </div>
+                <p class="endpoint-description">Basic health check endpoint</p>
+
+                <h4>Response</h4>
+                <div class="code-block">
+                    <pre>{
+  "status": "healthy",
+  "timestamp": "2025-01-15T10:30:00Z"
+}</pre>
+                </div>
+            </section>
+
+            <section id="chat-send" class="endpoint-section">
+                <div class="endpoint-header">
+                    <span class="method-badge method-post">POST</span>
+                    <span class="endpoint-path">/api/chat</span>
+                </div>
+                <p class="endpoint-description">Send a message to the AI consultation agent</p>
+
+                <h4>Request Body</h4>
+                <div class="code-block">
+                    <pre>{
+  "message": "I've been experiencing chest pain lately",
+  "conversation_id": "optional-uuid-for-existing-chat"
+}</pre>
+                </div>
+            </section>
+
+            <section id="predict-heart" class="endpoint-section">
+                <div class="endpoint-header">
+                    <span class="method-badge method-post">POST</span>
+                    <span class="endpoint-path">/api/predict/heart-disease</span>
+                </div>
+                <p class="endpoint-description">Predict heart disease risk based on patient data</p>
+            </section>
+
+            <section id="predict-stroke" class="endpoint-section">
+                <div class="endpoint-header">
+                    <span class="method-badge method-post">POST</span>
+                    <span class="endpoint-path">/api/predict/stroke</span>
+                </div>
+                <p class="endpoint-description">Predict stroke risk based on patient data</p>
+            </section>
+
+            <section id="predict-cancer" class="endpoint-section">
+                <div class="endpoint-header">
+                    <span class="method-badge method-post">POST</span>
+                    <span class="endpoint-path">/api/predict/cancer</span>
+                </div>
+                <p class="endpoint-description">Predict cancer risk based on symptoms and history</p>
+            </section>
+
+            <section id="predict-image" class="endpoint-section">
+                <div class="endpoint-header">
+                    <span class="method-badge method-post">POST</span>
+                    <span class="endpoint-path">/api/predict/medical-image</span>
+                </div>
+                <p class="endpoint-description">Analyze medical images (X-ray, MRI, CT scan)</p>
+            </section>
+
+            <section class="endpoint-section">
+                <h2>Response Format</h2>
+                <p class="endpoint-description">
+                    All API responses follow a consistent format with status, data, and optional error fields.
+                </p>
+
+                <h4>Success Response</h4>
+                <div class="code-block">
+                    <pre>{
+  "status": "success",
+  "data": { ... },
+  "message": "Optional success message",
+  "metadata": { ... }
+}</pre>
+                </div>
+
+                <h4>Error Response</h4>
+                <div class="code-block">
+                    <pre>{
+  "status": "error",
+  "error": {
+    "code": "ERROR_CODE",
+    "message": "Human-readable error message",
+    "details": { ... }
+  }
+}</pre>
+                </div>
+            </section>
+
+            <section class="endpoint-section">
+                <h2>Error Codes</h2>
+                <table class="schema-table">
+                    <thead>
+                        <tr>
+                            <th>Code</th>
+                            <th>Status</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>UNAUTHORIZED</td>
+                            <td>401</td>
+                            <td>Authentication required</td>
+                        </tr>
+                        <tr>
+                            <td>FORBIDDEN</td>
+                            <td>403</td>
+                            <td>Access denied</td>
+                        </tr>
+                        <tr>
+                            <td>NOT_FOUND</td>
+                            <td>404</td>
+                            <td>Resource not found</td>
+                        </tr>
+                        <tr>
+                            <td>VALIDATION_ERROR</td>
+                            <td>400</td>
+                            <td>Invalid input data</td>
+                        </tr>
+                        <tr>
+                            <td>RATE_LIMIT_EXCEEDED</td>
+                            <td>429</td>
+                            <td>Too many requests</td>
+                        </tr>
+                        <tr>
+                            <td>INTERNAL_ERROR</td>
+                            <td>500</td>
+                            <td>Server error</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+        </main>
+    </div>
+</div>
+{% endblock %}
