@@ -46,6 +46,9 @@ def create_app(config=None):
     # Store config in app for access
     app.config['app_config'] = config
 
+    # Initialize CSRF protection
+    csrf.init_app(app)
+
     # Security headers middleware
     @app.after_request
     def add_security_headers(response):
