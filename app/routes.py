@@ -3,7 +3,7 @@ from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from app import db, limiter
 from app.models import User, Conversation, PatientProfile, Allergy, Medication, PastMedicalHistory, PastSurgery, FamilyHistory, Message, Attachment
-from app.models.compliance import AuditLog, Consent, log_user_action, ConsentType, ActionType
+from app.compliance import AuditLog, Consent, log_user_action, ConsentType, ActionType
 from app.workflow.workflow import app as workflow_app
 from app.utils.api_response import APIResponse, ErrorCode
 from langgraph.types import Command
