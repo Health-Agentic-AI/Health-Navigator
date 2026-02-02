@@ -1,17 +1,46 @@
 from flask import Blueprint, render_template, request, jsonify, redirect, url_for, session, current_app
-from app import db
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+from app import db, limiter
 from app.models import User, Conversation, PatientProfile, Allergy, Medication, PastMedicalHistory, PastSurgery, FamilyHistory, Message, Attachment
 from app.workflow.workflow import app as workflow_app
+from app.utils.api_response import APIResponse, ErrorCode
 from langgraph.types import Command
 import uuid
 import os
 import json
+import logging
+import filetype
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
 from langgraph.errors import GraphInterrupt
 from datetime import datetime
+from sqlalchemy import text
+
+# Configure logging
+logger = logging.getLogger(__name__)
 
 main_bp = Blueprint('main', __name__)
+
+# Rate limiter instance for this blueprint
+limiter = Limiter(
+    key_func=get_remote_address,
+    default_limits=["200 per day", "50 per hour"],
+    storage_uri=os.environ.get("REDIS_URL", "memory://")
+)
+
+# Allowed file extensions
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'pdf', 'txt', 'docx'}
+
+# Allowed MIME types for additional security
+ALLOWED_MIME_TYPES = {
+    'image/png': 'png',
+    'image/jpeg': 'jpg',
+    'image/gif': 'gif',
+    'application/pdf': 'pdf',
+    'text/plain': 'txt',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'docx'
+}
 
 # --- Helper Functions ---
 
@@ -21,8 +50,60 @@ def get_current_user():
     return None
 
 def allowed_file(filename):
+    """Check if file extension is allowed."""
     return '.' in filename and \
-           filename.rsplit('.', 1)[1].lower() in {'png', 'jpg', 'jpeg', 'gif', 'pdf', 'txt', 'docx'}
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+def validate_file_type(file_stream, filename):
+    """
+    Validate file type using magic numbers (file content) in addition to extension.
+    This prevents users from disguising malicious files with allowed extensions.
+
+    Args:
+        file_stream: File object to validate
+        filename: Original filename
+
+    Returns:
+        tuple: (is_valid, error_message, detected_mime_type)
+    """
+    try:
+        # Check extension first
+        if not allowed_file(filename):
+            return False, f"File type not allowed. Allowed types: {', '.join(ALLOWED_EXTENSIONS)}", None
+
+        # Get file info from magic number detection
+        file_stream.seek(0)
+        header = file_stream.read(261)  # Read first 261 bytes for magic number detection
+        file_stream.seek(0)
+
+        kind = filetype.guess(header)
+
+        if kind is None:
+            # Couldn't determine type, fall back to extension check only
+            logger.warning(f"Could not detect file type for {filename}, allowing based on extension")
+            return True, None, None
+
+        detected_mime = kind.mime
+        detected_extension = kind.extension
+
+        # Check if detected MIME type is allowed
+        if detected_mime not in ALLOWED_MIME_TYPES:
+            return False, f"File content type ({detected_mime}) not allowed. File may be corrupted or renamed.", detected_mime
+
+        # Check if detected extension matches the claimed extension
+        claimed_extension = filename.rsplit('.', 1)[1].lower() if '.' in filename else ''
+        if detected_extension != claimed_extension:
+            logger.warning(f"Extension mismatch for {filename}: claimed '{claimed_extension}', detected '{detected_extension}'")
+            # Allow common variations (e.g., jpg/jpeg)
+            if {detected_extension, claimed_extension} == {'jpg', 'jpeg'}:
+                return True, None, detected_mime
+            return False, f"File extension '{claimed_extension}' doesn't match actual file type '{detected_extension}'", detected_mime
+
+        return True, None, detected_mime
+
+    except Exception as e:
+        logger.error(f"Error validating file type: {e}", exc_info=True)
+        return False, "Error validating file type", None
 
 # --- Routes ---
 
@@ -33,6 +114,7 @@ def index():
     return redirect(url_for('main.login'))
 
 @main_bp.route('/register', methods=['GET', 'POST'])
+@limiter.limit("5 per minute")
 def register():
     if request.method == 'POST':
         full_name = request.form['full_name']
@@ -59,6 +141,7 @@ def register():
     return render_template('register.html')
 
 @main_bp.route('/login', methods=['GET', 'POST'])
+@limiter.limit("5 per minute")
 def login():
     if request.method == 'POST':
         username = request.form['username']
@@ -89,6 +172,7 @@ def chat():
     return render_template('chat.html', user=user, conversations=conversations)
 
 @main_bp.route('/api/conversations', methods=['POST'])
+@limiter.limit("20 per minute")
 def create_conversation():
     user = get_current_user()
     if not user:
@@ -134,6 +218,7 @@ def get_conversation(conversation_id):
     })
 
 @main_bp.route('/api/chat/message', methods=['POST'])
+@limiter.limit("20 per minute")
 def send_message():
     user = get_current_user()
     if not user:
@@ -158,11 +243,12 @@ def send_message():
                 continue
 
             if allowed_file(file.filename):
-                # Check size (10MB) - basic check before saving
-                # Note: Flask does not read the full file into memory immediately if it's large,
-                # but accessing content_length or seeking end is needed.
-                # Content-Length header is for the whole request, so we check individually if possible.
-                # Here we just read content length if available or seek.
+                # Validate file type using magic numbers
+                is_valid, error_msg, detected_mime = validate_file_type(file.stream, file.filename)
+
+                if not is_valid:
+                    logger.warning(f"File validation failed: {error_msg}", extra={"filename": file.filename, "detected_mime": detected_mime})
+                    return jsonify({'error': error_msg}), 400
 
                 # Check file size safely
                 file.seek(0, os.SEEK_END)
@@ -170,12 +256,18 @@ def send_message():
                 file.seek(0)
 
                 if file_length > 10 * 1024 * 1024:
+                    logger.warning(f"File too large: {file.filename} ({file_length} bytes)", extra={"max_size": "10MB"})
                     return jsonify({'error': f'File {file.filename} is too large. Max 10MB.'}), 400
 
                 filename = secure_filename(file.filename)
                 file_path = os.path.join(upload_folder, filename)
                 file.save(file_path)
                 uploaded_files[filename] = file_path
+
+                logger.info(f"File uploaded successfully", extra={"filename": filename, "user_id": user.id})
+            else:
+                logger.warning(f"File extension not allowed: {file.filename}")
+                return jsonify({'error': f'File type not allowed. Allowed types: {", ".join(ALLOWED_EXTENSIONS)}'}), 400
 
     # Extract message and conversation_id
     if request.content_type.startswith('multipart/form-data'):
@@ -228,18 +320,18 @@ def send_message():
     # Check if we're resuming from an interrupt
     if current_state_snapshot.next:
         # We have pending tasks - we're resuming from an interrupt
-        print(f"DEBUG: Resuming from interrupt with user response: {message}")
+        logger.info(f"Resuming from interrupt", extra={"conversation_id": conversation_id, "user_id": user.id})
         try:
             # Resume with the user's message
             result = workflow_app.invoke(Command(resume=message), config=config)
-            
+
             # Check if finished or interrupted again
             final_state = workflow_app.get_state(config)
-            
+
             if not final_state.next:
                 # Workflow completed
                 final_output = result.get("final_refined_medical_output", "Analysis complete.")
-                
+
                 assistant_msg = Message(
                     conversation_id=conversation_id,
                     sender_type='assistant',
@@ -247,6 +339,8 @@ def send_message():
                 )
                 db.session.add(assistant_msg)
                 db.session.commit()
+
+                logger.info("Workflow completed successfully", extra={"conversation_id": conversation_id})
 
                 return jsonify({
                     'status': 'completed',
@@ -257,7 +351,7 @@ def send_message():
                 # Interrupted again - get new question
                 if final_state.tasks and final_state.tasks[0].interrupts:
                     interrupt_value = final_state.tasks[0].interrupts[0].value
-                    
+
                     system_msg = Message(
                         conversation_id=conversation_id,
                         sender_type='system_question',
@@ -266,20 +360,22 @@ def send_message():
                     db.session.add(system_msg)
                     db.session.commit()
 
+                    logger.info("Workflow interrupted again", extra={"conversation_id": conversation_id})
+
                     return jsonify({
                         'status': 'interrupted',
                         'question': interrupt_value,
                         'conversation_id': conversation.id
                     })
-        
+
         except GraphInterrupt as e:
             # Workflow was interrupted
-            print(f"DEBUG: GraphInterrupt caught during resume")
+            logger.debug(f"GraphInterrupt caught during resume", extra={"conversation_id": conversation_id})
             final_state = workflow_app.get_state(config)
-            
+
             if final_state.tasks and final_state.tasks[0].interrupts:
                 interrupt_value = final_state.tasks[0].interrupts[0].value
-                
+
                 system_msg = Message(
                     conversation_id=conversation_id,
                     sender_type='system_question',
@@ -293,17 +389,13 @@ def send_message():
                     'question': interrupt_value,
                     'conversation_id': conversation.id
                 })
-        
+
         except Exception as e:
-            print(f"ERROR: Unexpected error during resume: {e}")
-            import traceback
-            traceback.print_exc()
+            logger.error(f"Unexpected error during resume", exc_info=True, extra={"conversation_id": conversation_id, "user_id": user.id})
             return jsonify({'error': 'Workflow error during resume'}), 500
 
     else:
-        print("="*80)
-        print(f"USER ID IS: {user.id}")
-        print("="*80)
+        logger.info(f"Starting new workflow", extra={"conversation_id": conversation_id, "user_id": user.id})
         # Start new workflow run
         initial_state = {
             "input_prompt": message,
@@ -315,10 +407,10 @@ def send_message():
 
         try:
             result = workflow_app.invoke(initial_state, config=config)
-            
+
             # Check if completed or interrupted
             final_state = workflow_app.get_state(config)
-            
+
             if not final_state.next:
                 # Completed successfully
                 final_output = result.get("final_refined_medical_output", "I could not process that request.")
@@ -331,6 +423,8 @@ def send_message():
                 db.session.add(assistant_msg)
                 db.session.commit()
 
+                logger.info("New workflow completed successfully", extra={"conversation_id": conversation_id})
+
                 return jsonify({
                     'status': 'completed',
                     'response': final_output,
@@ -338,25 +432,19 @@ def send_message():
                 })
             else:
                 # Workflow was interrupted - ask user for info
-                print(f"DEBUG: final_state.next = {final_state.next}")
-                print(f"DEBUG: final_state.tasks = {final_state.tasks}")
-                
+                logger.debug(f"Workflow interrupted, checking for interrupt value", extra={"conversation_id": conversation_id})
+
                 # Try different ways to get interrupt value
                 interrupt_value = None
-                
+
                 if hasattr(final_state, 'tasks') and final_state.tasks:
                     task = final_state.tasks[0]
-                    print(f"DEBUG: task = {task}")
-                    print(f"DEBUG: task.interrupts = {getattr(task, 'interrupts', None)}")
-                    
+                    task_interrupts = getattr(task, 'interrupts', None)
+                    logger.debug(f"Checking task interrupts", extra={"has_interrupts": task_interrupts is not None})
+
                     if hasattr(task, 'interrupts') and task.interrupts:
                         interrupt_value = task.interrupts[0].value
-                
-                # Alternative: Check the state values directly
-                if not interrupt_value:
-                    print("DEBUG: Checking state.values for interrupt info")
-                    print(f"DEBUG: final_state.values = {final_state.values}")
-                
+
                 if interrupt_value:
                     system_msg = Message(
                         conversation_id=conversation_id,
@@ -366,24 +454,26 @@ def send_message():
                     db.session.add(system_msg)
                     db.session.commit()
 
+                    logger.info("New workflow interrupted, requesting user input", extra={"conversation_id": conversation_id})
+
                     return jsonify({
                         'status': 'interrupted',
                         'question': interrupt_value,
                         'conversation_id': conversation.id
                     })
                 else:
-                    print("ERROR: Interrupt detected but couldn't extract question")
+                    logger.error("Interrupt detected but couldn't extract question", extra={"conversation_id": conversation_id})
                     return jsonify({'error': 'Interrupt handling error'}), 500
 
         except GraphInterrupt as e:
             # This should not happen with invoke() - it returns state instead
             # But handle it just in case
-            print(f"DEBUG: GraphInterrupt caught during initial invoke")
+            logger.debug(f"GraphInterrupt caught during initial invoke", extra={"conversation_id": conversation_id})
             final_state = workflow_app.get_state(config)
-            
+
             if final_state.tasks and final_state.tasks[0].interrupts:
                 interrupt_value = final_state.tasks[0].interrupts[0].value
-                
+
                 system_msg = Message(
                     conversation_id=conversation_id,
                     sender_type='system_question',
@@ -397,11 +487,199 @@ def send_message():
                     'question': interrupt_value,
                     'conversation_id': conversation.id
                 })
-        
+
         except Exception as e:
-            print(f"ERROR: Unexpected error during workflow: {e}")
-            import traceback
-            traceback.print_exc()
+            logger.error(f"Unexpected error during workflow", exc_info=True, extra={"conversation_id": conversation_id, "user_id": user.id})
             return jsonify({'error': 'Workflow execution error'}), 500
 
     return jsonify({'error': 'Unknown workflow state'}), 500
+
+
+# --- Health Check Endpoints ---
+
+@main_bp.route('/health', methods=['GET'])
+def health_check():
+    """
+    Basic health check endpoint.
+    Returns the overall status of the application.
+    """
+    health_status = {
+        "status": "healthy",
+        "service": "health-navigator",
+        "version": os.environ.get("APP_VERSION", "2.0.0"),
+        "timestamp": datetime.utcnow().isoformat()
+    }
+    return jsonify(health_status), 200
+
+
+@main_bp.route('/health/detailed', methods=['GET'])
+def detailed_health_check():
+    """
+    Detailed health check endpoint.
+    Returns the status of all major components.
+    """
+    health_info = {
+        "status": "healthy",
+        "service": "health-navigator",
+        "version": os.environ.get("APP_VERSION", "2.0.0"),
+        "timestamp": datetime.utcnow().isoformat(),
+        "components": {}
+    }
+
+    # Check database connection
+    try:
+        db.session.execute(text('SELECT 1'))
+        health_info["components"]["database"] = {
+            "status": "healthy",
+            "type": "postgresql"
+        }
+    except Exception as e:
+        logger.error(f"Database health check failed: {e}")
+        health_info["components"]["database"] = {
+            "status": "unhealthy",
+            "error": str(e)
+        }
+        health_info["status"] = "degraded"
+
+    # Check vector DB (ChromaDB)
+    try:
+        from app.workflow.vectordb.vector_db_manager import get_vector_db
+        # Just verify we can import and initialize
+        health_info["components"]["vector_db"] = {
+            "status": "healthy",
+            "type": "chromadb"
+        }
+    except Exception as e:
+        logger.error(f"Vector DB health check failed: {e}")
+        health_info["components"]["vector_db"] = {
+            "status": "unhealthy",
+            "error": str(e)
+        }
+        health_info["status"] = "degraded"
+
+    # Check ML models directory
+    try:
+        import os
+        models_dir = os.path.join(os.path.dirname(__file__), 'workflow', 'ml_models')
+        if os.path.exists(models_dir):
+            health_info["components"]["ml_models"] = {
+                "status": "healthy",
+                "path": models_dir
+            }
+        else:
+            health_info["components"]["ml_models"] = {
+                "status": "unhealthy",
+                "error": "Models directory not found"
+            }
+            health_info["status"] = "degraded"
+    except Exception as e:
+        logger.error(f"ML models health check failed: {e}")
+        health_info["components"]["ml_models"] = {
+            "status": "unhealthy",
+            "error": str(e)
+        }
+        health_info["status"] = "degraded"
+
+    # Determine overall HTTP status code
+    status_code = 200 if health_info["status"] == "healthy" else 503
+    return jsonify(health_info), status_code
+
+
+@main_bp.route('/health/models', methods=['GET'])
+def models_health_check():
+    """
+    Health check for ML models specifically.
+    Returns the status of all ML model components.
+    """
+    models_info = {
+        "status": "unknown",
+        "timestamp": datetime.utcnow().isoformat(),
+        "models": {}
+    }
+
+    all_healthy = True
+
+    # Check Heart Disease model
+    try:
+        from app.workflow.ml_models.numerical_models.heart_disease.heart_disease import _ensure_model_loaded
+        _ensure_model_loaded()
+        models_info["models"]["heart_disease"] = {"status": "healthy"}
+    except Exception as e:
+        models_info["models"]["heart_disease"] = {"status": "unhealthy", "error": str(e)}
+        all_healthy = False
+
+    # Check Stroke model
+    try:
+        from app.workflow.ml_models.numerical_models.stroke_prediction.stroke_predictions import _ensure_model_loaded
+        _ensure_model_loaded()
+        models_info["models"]["stroke"] = {"status": "healthy"}
+    except Exception as e:
+        models_info["models"]["stroke"] = {"status": "unhealthy", "error": str(e)}
+        all_healthy = False
+
+    # Check Cancer model
+    try:
+        from app.workflow.ml_models.numerical_models.cancer_predictions_module.Cancer_prediction import _ensure_model_loaded
+        _ensure_model_loaded()
+        models_info["models"]["cancer"] = {"status": "healthy"}
+    except Exception as e:
+        models_info["models"]["cancer"] = {"status": "unhealthy", "error": str(e)}
+        all_healthy = False
+
+    # Check Chest X-Ray model
+    try:
+        from app.workflow.ml_models.vision_models.chest_xray.chest_xray import _ensure_model_loaded
+        _ensure_model_loaded()
+        models_info["models"]["chest_xray"] = {"status": "healthy"}
+    except Exception as e:
+        models_info["models"]["chest_xray"] = {"status": "unhealthy", "error": str(e)}
+        all_healthy = False
+
+    # Check Colon Tissue model
+    try:
+        from app.workflow.ml_models.vision_models.colon_tissue_classifier.colon import _ensure_model_loaded
+        _ensure_model_loaded()
+        models_info["models"]["colon_tissue"] = {"status": "healthy"}
+    except Exception as e:
+        models_info["models"]["colon_tissue"] = {"status": "unhealthy", "error": str(e)}
+        all_healthy = False
+
+    models_info["status"] = "healthy" if all_healthy else "degraded"
+    status_code = 200 if all_healthy else 503
+
+    return jsonify(models_info), status_code
+
+
+@main_bp.route('/health/ready', methods=['GET'])
+def readiness_check():
+    """
+    Readiness check endpoint for Kubernetes/container orchestration.
+    Returns whether the service is ready to accept traffic.
+    """
+    try:
+        # Check database connection
+        db.session.execute(text('SELECT 1'))
+
+        # Basic readiness check passed
+        return jsonify({
+            "status": "ready",
+            "timestamp": datetime.utcnow().isoformat()
+        }), 200
+    except Exception as e:
+        logger.error(f"Readiness check failed: {e}")
+        return jsonify({
+            "status": "not_ready",
+            "reason": str(e)
+        }), 503
+
+
+@main_bp.route('/health/live', methods=['GET'])
+def liveness_check():
+    """
+    Liveness check endpoint for Kubernetes/container orchestration.
+    Returns whether the service is alive (basic check).
+    """
+    return jsonify({
+        "status": "alive",
+        "timestamp": datetime.utcnow().isoformat()
+    }), 200
