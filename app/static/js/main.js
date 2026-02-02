@@ -1,5 +1,41 @@
 // Main JavaScript - Global functionality for Health Navigator
 
+// ==================
+// CSRF TOKEN HANDLING
+// ==================
+(function() {
+    // Get CSRF token from meta tag
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+
+    // Store globally for access in other scripts
+    window.csrfToken = csrfToken;
+
+    // Override fetch to include CSRF token
+    const originalFetch = window.fetch;
+    window.fetch = function(url, options = {}) {
+        // For same-origin requests, add CSRF token
+        if (csrfToken && typeof url === 'string' && (url.startsWith('/') || url.startsWith(window.location.origin))) {
+            const headers = options.headers || {};
+
+            // Add CSRF token as header for API requests
+            if (options.method && ['POST', 'PUT', 'DELETE', 'PATCH'].includes(options.method.toUpperCase())) {
+                // For FormData, append CSRF token
+                if (options.body instanceof FormData) {
+                    options.body.append('csrf_token', csrfToken);
+                }
+                // For other request types, add as header
+                else {
+                    headers['X-CSRFToken'] = csrfToken;
+                }
+            }
+
+            options.headers = headers;
+        }
+
+        return originalFetch(url, options);
+    };
+})();
+
 document.addEventListener('DOMContentLoaded', function () {
     // ==================
     // NAVBAR SCROLL EFFECT
