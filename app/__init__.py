@@ -46,7 +46,9 @@ def create_app(config=None):
     # Store config in app for access
     app.config['app_config'] = config
 
-    # Initialize CSRF protection
+    # Initialize extensions
+    db.init_app(app)
+    migrate.init_app(app, db)
     csrf.init_app(app)
 
     # Security headers middleware
