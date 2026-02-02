@@ -4,6 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Health Navigator - AI-powered medical consultation platform with secure, HIPAA-aligned workflows for comprehensive health analysis.">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{% block title %}Health Navigator{% endblock %}</title>
 
@@ -25,24 +26,29 @@
     <link href="{{ url_for('static', filename='css/layout.css') }}" rel="stylesheet">
     <link href="{{ url_for('static', filename='css/components.css') }}" rel="stylesheet">
     <link href="{{ url_for('static', filename='css/animations.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/accessibility.css') }}" rel="stylesheet">
     <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
     {% block extra_css %}{% endblock %}
 </head>
 
 <body>
 
-    <!-- Animated Background -->
-    <div class="bg-animated"></div>
-    <div class="bg-glow-layer"></div>
+    <!-- Skip Links for Accessibility -->
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+    <a href="#navigation" class="skip-link" style="top: -40px;">Skip to navigation</a>
+
+    <!-- Animated Background (decorative) -->
+    <div class="bg-animated" aria-hidden="true"></div>
+    <div class="bg-glow-layer" aria-hidden="true"></div>
 
     <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg fixed-top glass-navbar">
+    <nav class="navbar navbar-expand-lg fixed-top glass-navbar" id="navigation" role="navigation" aria-label="Main navigation">
         <div class="container-fluid px-4">
-            <a class="navbar-brand" href="/">
+            <a class="navbar-brand" href="/" aria-label="Health Navigator - Home">
                 <div class="brand-logo">
                     <div class="logo-icon">
-                        <i class="bi bi-heart-pulse-fill"></i>
-                        <div class="pulse-ring"></div>
+                        <i class="bi bi-heart-pulse-fill" aria-hidden="true"></i>
+                        <div class="pulse-ring" aria-hidden="true"></div>
                     </div>
                     <span class="brand-text">
                         <span class="brand-name">Health</span>
@@ -51,29 +57,29 @@
                 </div>
             </a>
 
-            <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-expanded="false" aria-controls="navbarNav" aria-label="Toggle navigation menu">
                 <span class="navbar-toggler-icon"></span>
             </button>
 
             <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto align-items-center">
+                <ul class="navbar-nav ms-auto align-items-center" role="menubar">
                     {% if session.get('user_id') %}
-                    <li class="nav-item">
-                        <a class="nav-link nav-btn-logout" href="{{ url_for('main.logout') }}">
-                            <i class="bi bi-box-arrow-right me-2"></i>
+                    <li class="nav-item" role="none">
+                        <a class="nav-link nav-btn-logout" href="{{ url_for('main.logout') }}" role="menuitem">
+                            <i class="bi bi-box-arrow-right me-2" aria-hidden="true"></i>
                             <span>Logout</span>
                         </a>
                     </li>
                     {% else %}
-                    <li class="nav-item me-2">
-                        <a class="nav-link nav-btn-outline" href="{{ url_for('main.login') }}">
+                    <li class="nav-item me-2" role="none">
+                        <a class="nav-link nav-btn-outline" href="{{ url_for('main.login') }}" role="menuitem">
                             <span>Sign In</span>
                         </a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link nav-btn-primary" href="{{ url_for('main.register') }}">
+                    <li class="nav-item" role="none">
+                        <a class="nav-link nav-btn-primary" href="{{ url_for('main.register') }}" role="menuitem">
                             <span>Get Started</span>
-                            <i class="bi bi-arrow-right ms-2"></i>
+                            <i class="bi bi-arrow-right ms-2" aria-hidden="true"></i>
                         </a>
                     </li>
                     {% endif %}
@@ -83,7 +89,7 @@
     </nav>
 
     <!-- Main Content -->
-    <main class="main-content">
+    <main class="main-content" id="main-content" role="main" tabindex="-1">
         {% block content %}{% endblock %}
     </main>
 

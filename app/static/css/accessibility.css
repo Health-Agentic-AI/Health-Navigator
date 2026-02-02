@@ -1,0 +1,590 @@
+/* ===================================
+   HEALTH NAVIGATOR - ACCESSIBILITY
+   WCAG 2.1 AA compliant accessibility styles
+   =================================== */
+
+/* ==================
+   FOCUS STYLES
+   ================== */
+/* Ensure focus is always visible for keyboard navigation */
+*:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+    border-radius: 2px;
+}
+
+/* High contrast focus for better visibility */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+    outline: 3px solid var(--color-accent);
+    outline-offset: 2px;
+    box-shadow: 0 0 0 4px rgba(34, 211, 238, 0.3);
+}
+
+/* Remove default outline and add custom for better visibility */
+:focus {
+    outline: none;
+}
+
+/* ==================
+   SKIP LINKS
+   ================== */
+.skip-link {
+    position: absolute;
+    top: -100%;
+    left: 0;
+    background: var(--color-primary);
+    color: white;
+    padding: var(--spacing-sm) var(--spacing-md);
+    text-decoration: none;
+    z-index: 10000;
+    transition: top var(--transition-fast);
+    font-weight: 600;
+    border-radius: 0 0 var(--radius-md) 0;
+}
+
+.skip-link:focus {
+    top: 0;
+}
+
+/* ==================
+   SCREEN READER ONLY
+   ================== */
+.sr-only,
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* Screen reader only but focusable when needed */
+.sr-only-focusable:focus {
+    position: static;
+    width: auto;
+    height: auto;
+    padding: inherit;
+    margin: inherit;
+    overflow: visible;
+    clip: auto;
+    white-space: normal;
+}
+
+/* ==================
+   COLOR CONTRAST
+   ================== */
+/* Ensure text meets WCAG AA contrast ratio (4.5:1 for normal text) */
+.text-high-contrast {
+    color: var(--color-text-primary);
+}
+
+/* Link focus states for better visibility */
+a:focus {
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 3px;
+}
+
+/* ==================
+   FORM ACCESSIBILITY
+   ================== */
+/* Ensure form labels are properly associated */
+label {
+    display: block;
+    margin-bottom: var(--spacing-xs);
+    font-weight: 500;
+    cursor: pointer;
+}
+
+/* Indicate required fields more clearly */
+input:required + label::after,
+label:has(+ input:required)::after,
+label.required::after {
+    content: ' *';
+    color: var(--color-danger);
+    font-weight: 600;
+}
+
+/* Error state styling */
+input:invalid:not(:placeholder-shown),
+textarea:invalid:not(:placeholder-shown) {
+    border-color: var(--color-danger);
+}
+
+/* Success state styling */
+input:valid:not(:placeholder-shown),
+textarea:valid:not(:placeholder-shown) {
+    border-color: var(--color-success);
+}
+
+/* Fieldset and legend for accessible form groups */
+fieldset {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-lg);
+    margin-bottom: var(--spacing-lg);
+}
+
+legend {
+    font-weight: 600;
+    padding: 0 var(--spacing-sm);
+    color: var(--color-text-secondary);
+}
+
+/* ==================
+   BUTTON ACCESSIBILITY
+   ================== */
+/* Ensure icon buttons have accessible labels */
+.btn-icon[aria-label],
+.btn-icon[title] {
+    min-width: 44px;
+    min-height: 44px;
+}
+
+/* Touch target size for mobile (at least 44x44px) */
+@media (pointer: coarse) {
+    button,
+    a,
+    input[type="checkbox"],
+    input[type="radio"] {
+        min-width: 44px;
+        min-height: 44px;
+    }
+
+    /* Adjust text inputs to be taller */
+    input[type="text"],
+    input[type="email"],
+    input[type="password"],
+    textarea,
+    select {
+        min-height: 44px;
+    }
+}
+
+/* ==================
+   LANDMARKS
+   ================== */
+/* Visual indicators for landmarks (useful for debugging) */
+[role="banner"],
+[role="navigation"],
+[role="main"],
+[role="complementary"],
+[role="contentinfo"],
+[role="search"],
+header, nav, main, aside, footer {
+    position: relative;
+}
+
+/* ==================
+   LIVE REGIONS
+   ================== */
+/* Visual feedback for live regions */
+[role="status"],
+[role="alert"],
+[aria-live="polite"],
+[aria-live="assertive"] {
+    position: relative;
+}
+
+[role="alert"] {
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-md);
+    margin: var(--spacing-md) 0;
+}
+
+/* ==================
+   MODAL ACCESSIBILITY
+   ================== */
+[role="dialog"],
+.modal {
+    z-index: var(--z-modal);
+}
+
+[role="dialog"][aria-modal="true"] {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+/* Modal backdrop focus trap */
+.modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.75);
+    z-index: calc(var(--z-modal) - 1);
+}
+
+/* ==================
+   TABLE ACCESSIBILITY
+   ================== */
+/* Responsive table wrapper */
+.table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Table captions */
+table {
+    caption-side: bottom;
+    caption-side: bottom;
+}
+
+caption {
+    text-align: left;
+    padding: var(--spacing-md);
+    font-size: 0.875rem;
+    color: var(--color-text-muted);
+}
+
+/* ==================
+   INTERACTIVE ELEMENTS
+   ================== */
+/* Disable state should be clearly visible */
+button:disabled,
+input:disabled,
+select:disabled,
+textarea:disabled,
+.btn:disabled,
+[aria-disabled="true"] {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+/* ==================
+   MOTION PREFERENCES
+   ================== */
+@media (prefers-reduced-motion: reduce) {
+    /* Respect user's motion preferences */
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+/* ==================
+   PREFERRED COLOR SCHEME
+   ================== */
+@media (prefers-color-scheme: light) {
+    /* Could add light theme overrides here if needed */
+}
+
+@media (prefers-color-scheme: dark) {
+    /* Already using dark theme by default */
+}
+
+/* ==================
+   HIGH CONTRAST MODE
+   ================== */
+@media (prefers-contrast: high) {
+    /* Enhanced borders for better visibility */
+    * {
+        border-width: 2px;
+    }
+
+    /* Stronger focus indicators */
+    *:focus-visible {
+        outline-width: 3px;
+        outline-offset: 3px;
+    }
+
+    /* Enhanced shadow for depth */
+    .card,
+    .message-card {
+        border-width: 2px;
+        box-shadow: none;
+    }
+}
+
+/* ==================
+   TEXT SCALES
+   ================== */
+/* Ensure layouts work at 200% text zoom */
+@media (max-width: 1280px) {
+    html {
+        /* Layout should still work when text is scaled */
+    }
+}
+
+/* Handle user-set font sizes gracefully */
+@media (min-resolution: 2dppx) {
+    /* High DPI displays */
+    body {
+        /* Could enhance for retina displays */
+    }
+}
+
+/* ==================
+   LINK ACCESSIBILITY
+   ================== */
+/* Ensure links are distinguishable without color alone */
+a {
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 2px;
+}
+
+a:hover {
+    text-decoration-thickness: 2px;
+}
+
+/* External link indicators */
+a[rel="external"][href^="http"]::after {
+    content: "\f082"; /* Bootstrap icon for external link */
+    font-family: "bi-icons";
+    font-size: 0.8em;
+    margin-left: 0.2em;
+    display: inline-block;
+}
+
+/* ==================
+   LIST ACCESSIBILITY
+   ================== */
+/* Ensure lists are properly styled */
+ul, ol {
+    padding-left: 2em;
+    margin-bottom: var(--spacing-md);
+}
+
+/* Description lists */
+dl {
+    margin-bottom: var(--spacing-md);
+}
+
+dt {
+    font-weight: 600;
+    margin-top: var(--spacing-md);
+}
+
+dd {
+    margin-left: var(--spacing-lg);
+}
+
+/* ==================
+   IMAGE ACCESSIBILITY
+   ================== */
+/* Decorative images should be hidden from screen readers */
+img[alt=""],
+img[role="presentation"],
+img[aria-hidden="true"] {
+    /* Ensure decorative images have these attributes */
+}
+
+/* ==================
+   HEADING HIERARCHY
+   ================== */
+/* Visual heading hierarchy (should match semantic structure) */
+h1, .h1 { font-size: 2.5rem; font-weight: 700; }
+h2, .h2 { font-size: 2rem; font-weight: 700; }
+h3, .h3 { font-size: 1.5rem; font-weight: 600; }
+h4, .h4 { font-size: 1.25rem; font-weight: 600; }
+h5, .h5 { font-size: 1rem; font-weight: 600; }
+h6, .h6 { font-size: 0.875rem; font-weight: 600; }
+
+/* Heading spacing */
+h1, h2, h3, h4, h5, h6 {
+    margin-top: var(--spacing-xl);
+    margin-bottom: var(--spacing-md);
+}
+
+h1:first-child,
+h2:first-child,
+h3:first-child,
+h4:first-child,
+h5:first-child,
+h6:first-child {
+    margin-top: 0;
+}
+
+/* ==================
+   CODE ACCESSIBILITY
+   ================== */
+code, kbd, samp, pre {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 0.9em;
+    background: var(--color-bg-secondary);
+    padding: 0.125em 0.25em;
+    border-radius: var(--radius-sm);
+}
+
+pre {
+    padding: var(--spacing-md);
+    overflow-x: auto;
+}
+
+/* ==================
+   SEPARATOR ACCESSIBILITY
+   ================== */
+hr,
+[role="separator"] {
+    border: none;
+    border-top: 1px solid var(--color-border);
+    height: 1px;
+    margin: var(--spacing-xl) 0;
+}
+
+/* ==================
+   TOGGLE BUTTONS
+   ================== */
+/* Accessible toggle/switch styling */
+[role="switch"][aria-checked="true"] {
+    background: var(--color-success);
+}
+
+[role="switch"][aria-checked="false"] {
+    background: var(--color-bg-tertiary);
+}
+
+/* ==================
+   EXPANDABLE SECTIONS
+   ================== */
+[aria-expanded="false"] .expanded-content,
+[aria-hidden="true"] {
+    display: none;
+}
+
+[aria-expanded="true"] .collapsed-content {
+    display: none;
+}
+
+/* ==================
+   TAB INTERFACE
+   ================== */
+[role="tablist"] {
+    display: flex;
+    gap: var(--spacing-sm);
+    border-bottom: 2px solid var(--color-border);
+}
+
+[role="tab"] {
+    padding: var(--spacing-md) var(--spacing-lg);
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+    transition: all var(--transition-base);
+}
+
+[role="tab"][aria-selected="true"] {
+    border-bottom-color: var(--color-primary);
+    color: var(--color-primary);
+}
+
+[role="tab"][aria-selected="false"] {
+    color: var(--color-text-muted);
+}
+
+[role="tabpanel"] {
+    padding: var(--spacing-lg);
+}
+
+[role="tabpanel"][aria-hidden="true"] {
+    display: none;
+}
+
+/* ==================
+   MENU ACCESSIBILITY
+   ================== */
+[role="menu"],
+[role="listbox"] {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+[role="menuitem"],
+[role="option"] {
+    display: block;
+    padding: var(--spacing-sm) var(--spacing-md);
+    cursor: pointer;
+    transition: background var(--transition-fast);
+}
+
+[role="menuitem"][aria-selected="true"],
+[role="option"][aria-selected="true"] {
+    background: rgba(91, 124, 250, 0.1);
+}
+
+[role="menuitem"]:focus,
+[role="option"]:focus {
+    background: rgba(91, 124, 250, 0.2);
+    outline: 2px solid var(--color-accent);
+    outline-offset: -2px;
+}
+
+/* ==================
+    PROGRESS BAR ACCESSIBILITY
+    ================== */
+[role="progressbar"] {
+    position: relative;
+}
+
+[role="progressbar"]::after {
+    content: attr(aria-valuetext);
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+/* ==================
+   TOOLBAR ACCESSIBILITY
+   ================== */
+[role="toolbar"] {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm);
+}
+
+[role="toolbar"] > * {
+    flex-shrink: 0;
+}
+
+/* ==================
+   RESPONSIVE HIDE/SHOW
+   ================== */
+/* Use these instead of display: none for screen readers */
+.hidden {
+    display: none !important;
+}
+
+/* Hide visually but keep accessible to screen readers */
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* Hide from screen readers but show visually */
+.sr-only-ignore {
+    position: absolute;
+    left: -10000px;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+}
