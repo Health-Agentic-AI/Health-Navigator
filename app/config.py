@@ -13,7 +13,14 @@ import logging
 logger = logging.getLogger(__name__)
 
 # Load environment variables from .env file
-load_dotenv(r'C:\Projects\Health-Navigator\credentials.env')
+# Try to load from project root
+try:
+    from pathlib import Path
+    project_root = Path(__file__).parent.parent
+    load_dotenv(project_root / '.env')
+    load_dotenv(project_root / 'credentials.env')
+except Exception:
+    pass  # Fallback to environment variables
 
 
 class ConfigValidationError(Exception):
