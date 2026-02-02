@@ -53,6 +53,14 @@ def create_app():
     setup_logging(app)
     add_request_id_middleware(app)
 
+    # Initialize model registry
+    from app.workflow.model_registry import init_default_models
+    try:
+        init_default_models()
+        app.logger.info("Model registry initialized with default models")
+    except Exception as e:
+        app.logger.warning(f"Could not initialize model registry: {e}")
+
     # Security headers
     @app.after_request
     def add_security_headers(response):
