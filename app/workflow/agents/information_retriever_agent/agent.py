@@ -66,7 +66,6 @@ def retrieve_from_vector_db(
     """
     print(f"DEBUG: retrieve_from_vector_db called. Query: {query}, User ID: {user_id}")
     db = HybridVectorDB(user_id=user_id)
-    
     results = db.retrieve(
         query=query,
         top_k=top_k,

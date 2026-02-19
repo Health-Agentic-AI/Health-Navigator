@@ -12,6 +12,7 @@
     <meta name="application-name" content="Health Navigator">
     <meta name="msapplication-TileColor" content="#5b7cfa">
     <meta name="msapplication-config" content="/static/browserconfig.xml">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{% block title %}Health Navigator{% endblock %}</title>
 
     <!-- PWA Manifest -->
