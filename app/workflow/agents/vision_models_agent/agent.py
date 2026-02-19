@@ -7,7 +7,6 @@ from langchain.tools import tool
 from langchain_community.agent_toolkits.sql.toolkit import SQLDatabaseToolkit
 from langchain_community.utilities.sql_database import SQLDatabase
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_google_genai import ChatGoogleGenerativeAI
 from dotenv import load_dotenv
 import time
 import os
@@ -15,6 +14,7 @@ load_dotenv(r'C:\My Projects\Health-Navigator\credentials.env')
 
 from app.workflow.ml_models.vision_models.colon_tissue_classifier.colon import classify_colon
 from app.workflow.ml_models.vision_models.chest_xray.chest_xray import classify_chest_xray
+from app.workflow.llm_provider import create_langchain_chat_model
 
 @tool
 def classify_colon_tissue_tool(image_path: str) -> str:
@@ -260,10 +260,9 @@ Note: be accurate about the image path and pass it exactly the same.
 
 """
 
-    llm = ChatGoogleGenerativeAI(
-        model="gemini-3-flash-preview",
-        google_api_key=os.environ["GOOGLE_API_KEY"],
-        name="Vision Models Agent"
+    llm = create_langchain_chat_model(
+        agent_name="Vision Models Agent",
+        google_model="gemini-3-flash-preview",
     )
 
     return create_agent(llm, tools, system_prompt=system_prompt)

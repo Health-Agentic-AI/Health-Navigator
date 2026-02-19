@@ -25,10 +25,12 @@ The system takes user input (text and optional attachments), validates the medic
 ## Technology Stack
 
 *   **Orchestration**: [LangGraph](https://langchain-ai.github.io/langgraph/) (StateGraph, MemorySaver) for managing state, cycles, and persistence.
-*   **LLM**: Google Gemini (via `langchain-google-genai`) for reasoning, validation, and medical assessment.
+*   **LLM**: Provider-switchable via env:
+    *   **Google Gemini** (via `langchain-google-genai`)
+    *   **z.ai / GLM** (via OpenAI-compatible `langchain-openai` + custom `base_url`)
 *   **Backend**: Flask for the API and application server.
 *   **Database**:
-    *   **PostgreSQL**: Stores structured patient data (medications, appointments, labs, vitals).
+    *   **PostgreSQL** (primary) and **MySQL** (automatic fallback): stores structured patient data (medications, appointments, labs, vitals).
     *   **Hybrid Vector DB**: Stores unstructured documents (clinical notes, reports, scans). It utilizes a **Hybrid Search Strategy** combining **Semantic Search** (embeddings) for conceptual matching and **BM25** for precise keyword matching.
 *   **Computer Vision**: PyTorch (ResNet18-based custom models) for X-ray and tissue analysis.
 
@@ -164,6 +166,12 @@ flask run
 - `results/stroke_model.pth`
 - `results/cancer_model.pth` / `results/heart_model.pth`
 - `results/scaler.pkl`, `results/feature_names.pkl`
+
+**Environment highlights:**
+- `LLM_PROVIDER=google` or `LLM_PROVIDER=z.ai`
+- For Google: set `GOOGLE_API_KEY` (and optionally `GOOGLE_MODEL`)
+- For z.ai: set `ZAI_API_KEY`, `ZAI_MODEL` (e.g. `glm-4.7`), and `ZAI_BASE_URL`
+- Structured DB connection now attempts PostgreSQL first, then MySQL fallback using the configured DB fields.
 
 ## Disclaimer
 

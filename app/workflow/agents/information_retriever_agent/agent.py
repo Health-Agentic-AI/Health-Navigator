@@ -1,7 +1,6 @@
 import os
 from typing import Dict, Any
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
-from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_community.utilities import SQLDatabase
 from langchain_community.agent_toolkits import SQLDatabaseToolkit
 from langchain_core.tools import tool
@@ -18,6 +17,8 @@ from dotenv import load_dotenv
 load_dotenv(os.path.join(os.getcwd(), 'credentials.env'))
 
 from app.workflow.vectordb.vectordb import HybridVectorDB
+from app.workflow.llm_provider import create_langchain_chat_model
+from app.config import DatabaseConfig
 
 
 @tool
@@ -133,18 +134,19 @@ def ask_user_for_info(request: str) -> str:
 
 # Helpers for lazy loading
 def get_llm():
-    return ChatGoogleGenerativeAI(
-        model="gemini-3-flash-preview",
-        google_api_key=os.environ.get("GOOGLE_API_KEY"),
-        name="Information Retriever Agent"
+    return create_langchain_chat_model(
+        agent_name="Information Retriever Agent",
+        google_model="gemini-3-flash-preview",
     )
 
 def get_sql_db():
     try:
-        pg_uri = f'postgresql+psycopg2://{os.environ.get("POSTGRES_USERNAME")}:{os.environ.get("POSTGRES_PASSWORD")}@{os.environ.get("POSTGRES_HOST")}:{os.environ.get("POSTGRES_PORT")}/{os.environ.get("DATABASE_NAME")}'
-        return SQLDatabase.from_uri(pg_uri)
+        db_config = DatabaseConfig.from_env()
+        resolved_uri, resolved_backend = db_config.resolve_uri()
+        print(f"Connected to {resolved_backend} database backend.")
+        return SQLDatabase.from_uri(resolved_uri)
     except Exception as e:
-        print(f"Failed to connect to DB: {e}")
+        print(f"Failed to connect to PostgreSQL and MySQL: {e}")
         return None
 
 # DB Retriever Agent System Prompt

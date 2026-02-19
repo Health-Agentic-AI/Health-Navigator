@@ -14,7 +14,6 @@ from langgraph.graph import StateGraph, END
 from typing import TypedDict, List, Dict, Any
 from typing import Literal, List, Dict, Any, Annotated
 from typing_extensions import TypedDict
-from langchain_google_genai import ChatGoogleGenerativeAI
 from langgraph.types import Command, interrupt
 import operator
 import logging
@@ -33,6 +32,7 @@ from app.workflow.agents.vision_models_agent.agent import invoke_agent as invoke
 
 from app.workflow.agents.information_retriever_agent.agent import invoke_db_retriever_agent
 from app.workflow.agents.medical_agent.agent import invoke_medical_agent
+from app.workflow.llm_provider import create_langchain_chat_model
 
 
 
@@ -182,9 +182,8 @@ def input_not_valid_fallback_node(state: AgentState):
         error_context = "The provided image could not be processed or is not a valid medical image."
 
     # Initialize LLM for error generation
-    llm = ChatGoogleGenerativeAI(
-        model="gemini-2.5-flash-preview-09-2025",
-        google_api_key=os.environ["GOOGLE_API_KEY"],
+    llm = create_langchain_chat_model(
+        google_model="gemini-2.5-flash-preview-09-2025",
     )
 
     system_prompt = """You are a helpful assistant for a medical application.
@@ -524,9 +523,8 @@ def output_refiner_node(state: AgentState):
     medical_output = state.get("medical_agent_output", "No medical output available")
     
     # Initialize LLM
-    llm = ChatGoogleGenerativeAI(
-        model="gemini-2.5-flash-preview-09-2025",
-        google_api_key=os.environ["GOOGLE_API_KEY"],
+    llm = create_langchain_chat_model(
+        google_model="gemini-2.5-flash-preview-09-2025",
     )
     
     # System prompt with strict medical preservation instructions

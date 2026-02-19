@@ -1,9 +1,10 @@
-from langchain_google_genai import ChatGoogleGenerativeAI
 from typing import TypedDict, Literal
+from functools import lru_cache
 from dotenv import load_dotenv
 import os
+from app.workflow.llm_provider import create_langchain_chat_model
 
-load_dotenv('C:\My Projects\Health-Navigator\credentials.env')
+load_dotenv(os.path.join(os.getcwd(), 'credentials.env'))
 
 
 system_prompt = f"""
@@ -59,22 +60,24 @@ class TextOnlyInputValidator(TypedDict):
     input_classification: Literal["TEXT_VALID", "TEXT_NOT_VALID"]
 
 
-structured_llm = ChatGoogleGenerativeAI(
-    model="gemini-2.5-flash-lite-preview-09-2025",
-    google_api_key=os.getenv("GOOGLE_API_KEY"),
-    
+@lru_cache
+def get_structured_llm():
+    return create_langchain_chat_model(
+        google_model="gemini-2.5-flash-lite-preview-09-2025",
     ).with_structured_output(MedicalInputCheck)
 
-structured_llm_text_only = ChatGoogleGenerativeAI(
-    model="gemini-2.5-flash-lite-preview-09-2025",
-    google_api_key=os.getenv("GOOGLE_API_KEY"),
-    
+
+@lru_cache
+def get_structured_llm_text_only():
+    return create_langchain_chat_model(
+        google_model="gemini-2.5-flash-lite-preview-09-2025",
     ).with_structured_output(TextOnlyInputValidator)
 
 
 def validate_first_input(input_text: str, available_attachments=None):
 
     available_attachments = available_attachments if available_attachments else "The user did not provide any attachments."
+    structured_llm = get_structured_llm()
 
     result = structured_llm.invoke([
         ("system", system_prompt),
@@ -86,6 +89,7 @@ def validate_first_input(input_text: str, available_attachments=None):
 
 def validate_input_text_only(title, input_text: str):
 
+    structured_llm_text_only = get_structured_llm_text_only()
 
     result = structured_llm_text_only.invoke([
         ("system", system_prompt_text_only),

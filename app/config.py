@@ -4,11 +4,12 @@ Environment-based configuration classes with validation
 """
 
 import os
-from typing import List, Optional
+from typing import List, Optional, Tuple
 from dataclasses import dataclass, field
 from functools import lru_cache
 from dotenv import load_dotenv
 import logging
+from sqlalchemy import create_engine, text
 
 logger = logging.getLogger(__name__)
 
@@ -56,37 +57,112 @@ def _get_list(env_var: str, default: Optional[str] = None) -> List[str]:
 
 @dataclass
 class DatabaseConfig:
-    """Database configuration."""
+    """Database configuration with PostgreSQL-first, MySQL-fallback support."""
     host: str
     port: int
     username: str
     password: str
     database: str
+    mysql_host: str
+    mysql_port: int
+    mysql_username: str
+    mysql_password: str
+    mysql_database: str
     pool_size: int = 20
     max_overflow: int = 40
     pool_timeout: int = 30
     pool_recycle: int = 3600
     echo: bool = False
+    connect_timeout: int = 3
+    _active_uri: Optional[str] = field(default=None, init=False, repr=False)
+    _active_backend: Optional[str] = field(default=None, init=False, repr=False)
 
     @classmethod
     def from_env(cls) -> 'DatabaseConfig':
         """Create database config from environment variables."""
+        default_database = os.environ.get('DATABASE_NAME', 'medical_db')
         return cls(
             host=os.environ.get('POSTGRES_HOST', 'localhost'),
             port=_get_int('POSTGRES_PORT', 5432, 1, 65535),
             username=os.environ.get('POSTGRES_USERNAME', 'postgres'),
             password=os.environ.get('POSTGRES_PASSWORD', 'password'),
-            database=os.environ.get('DATABASE_NAME', 'medical_db'),
+            database=default_database,
+            mysql_host=os.environ.get('MYSQL_HOST', 'localhost'),
+            mysql_port=_get_int('MYSQL_PORT', 3306, 1, 65535),
+            mysql_username=os.environ.get('MYSQL_USERNAME', 'root'),
+            mysql_password=os.environ.get('MYSQL_PASSWORD', 'password'),
+            mysql_database=os.environ.get('MYSQL_DATABASE', default_database),
             pool_size=_get_int('DB_POOL_SIZE', 20, 1, 100),
             max_overflow=_get_int('DB_MAX_OVERFLOW', 40, 0, 100),
             pool_timeout=_get_int('DB_POOL_TIMEOUT', 30, 1, 300),
             pool_recycle=_get_int('DB_POOL_RECYCLE', 3600, 60, 86400),
-            echo=_get_bool('DB_ECHO', False)
+            echo=_get_bool('DB_ECHO', False),
+            connect_timeout=_get_int('DB_CONNECT_TIMEOUT', 3, 1, 30)
         )
 
-    def get_uri(self) -> str:
-        """Get the database connection URI."""
+    def get_postgres_uri(self) -> str:
+        """Assemble PostgreSQL connection URI from discrete connection fields."""
         return f'postgresql+psycopg2://{self.username}:{self.password}@{self.host}:{self.port}/{self.database}'
+
+    def get_mysql_uri(self) -> str:
+        """Assemble MySQL connection URI from discrete connection fields."""
+        return f'mysql+pymysql://{self.mysql_username}:{self.mysql_password}@{self.mysql_host}:{self.mysql_port}/{self.mysql_database}'
+
+    def get_candidate_uris(self) -> List[Tuple[str, str]]:
+        """Return connection candidates in priority order."""
+        return [
+            ('postgresql', self.get_postgres_uri()),
+            ('mysql', self.get_mysql_uri())
+        ]
+
+    def _test_uri(self, uri: str) -> None:
+        """Test DB connectivity using SQLAlchemy."""
+        engine = create_engine(
+            uri,
+            pool_pre_ping=True,
+            connect_args={'connect_timeout': self.connect_timeout}
+        )
+        try:
+            with engine.connect() as connection:
+                connection.execute(text('SELECT 1'))
+        finally:
+            engine.dispose()
+
+    def resolve_uri(self, force_refresh: bool = False) -> Tuple[str, str]:
+        """
+        Resolve and cache the active DB URI, trying PostgreSQL first then MySQL.
+
+        Returns:
+            Tuple[str, str]: (resolved_uri, backend_type)
+        """
+        if not force_refresh and self._active_uri and self._active_backend:
+            return self._active_uri, self._active_backend
+
+        last_error = None
+        for backend, uri in self.get_candidate_uris():
+            try:
+                self._test_uri(uri)
+                self._active_uri = uri
+                self._active_backend = backend
+                logger.info(f"Database connection resolved using {backend}")
+                return uri, backend
+            except Exception as exc:
+                last_error = exc
+                logger.warning(f"Failed to connect using {backend}, trying fallback: {exc}")
+
+        raise ConfigValidationError(
+            "Unable to connect to PostgreSQL or MySQL. Check DB credentials and availability."
+        ) from last_error
+
+    def get_uri(self) -> str:
+        """Get resolved database URI (PostgreSQL first, then MySQL fallback)."""
+        uri, _ = self.resolve_uri()
+        return uri
+
+    def get_database_type(self) -> str:
+        """Get resolved database backend type."""
+        _, backend = self.resolve_uri()
+        return backend
 
 
 @dataclass
@@ -185,9 +261,13 @@ class RateLimitConfig:
 @dataclass
 class APIConfig:
     """External API configuration."""
+    llm_provider: str = 'google'  # google or z.ai
     google_api_key: Optional[str] = None
     google_model: str = 'gemini-2.0-flash-exp'
     vision_model: str = 'gemini-2.0-flash-exp'
+    zai_api_key: Optional[str] = None
+    zai_model: str = 'glm-4.7'
+    zai_base_url: str = 'https://api.z.ai/api/paas/v4/'
     temperature: float = 0.7
     max_tokens: int = 4096
     timeout: int = 120
@@ -196,9 +276,13 @@ class APIConfig:
     def from_env(cls) -> 'APIConfig':
         """Create API config from environment variables."""
         return cls(
+            llm_provider=os.environ.get('LLM_PROVIDER', 'google'),
             google_api_key=os.environ.get('GOOGLE_API_KEY'),
             google_model=os.environ.get('GOOGLE_MODEL', 'gemini-2.0-flash-exp'),
             vision_model=os.environ.get('GOOGLE_VISION_MODEL', 'gemini-2.0-flash-exp'),
+            zai_api_key=os.environ.get('ZAI_API_KEY'),
+            zai_model=os.environ.get('ZAI_MODEL', 'glm-4.7'),
+            zai_base_url=os.environ.get('ZAI_BASE_URL', 'https://api.z.ai/api/paas/v4/'),
             temperature=float(os.environ.get('API_TEMPERATURE', '0.7')),
             max_tokens=_get_int('API_MAX_TOKENS', 4096, 128, 32768),
             timeout=_get_int('API_TIMEOUT', 120, 10, 600)
@@ -303,13 +387,21 @@ class AppConfig:
         if self.env == 'production' and self.security.secret_key == 'dev-key-please-change-in-production':
             raise ConfigValidationError('FLASK_SECRET_KEY must be set in production')
 
-        # Validate Google API key
-        if not self.api.google_api_key:
-            logger.warning('GOOGLE_API_KEY not set - AI features will be limited')
+        provider = self.api.llm_provider.strip().lower()
+        if provider not in {'google', 'z.ai'}:
+            raise ConfigValidationError("LLM_PROVIDER must be either 'google' or 'z.ai'")
+
+        # Validate active LLM provider credentials
+        if provider == 'google' and not self.api.google_api_key:
+            logger.warning('GOOGLE_API_KEY not set while LLM_PROVIDER=google - AI features will be limited')
+        if provider == 'z.ai' and not self.api.zai_api_key:
+            logger.warning('ZAI_API_KEY not set while LLM_PROVIDER=z.ai - AI features will be limited')
 
         # Validate database connection
-        if not self.database.password or self.database.password == 'password':
-            logger.warning('Using default database password - not recommended for production')
+        postgres_default = (not self.database.password or self.database.password == 'password')
+        mysql_default = (not self.database.mysql_password or self.database.mysql_password == 'password')
+        if postgres_default and mysql_default:
+            logger.warning('Using default PostgreSQL and MySQL passwords - not recommended for production')
 
 
 @lru_cache
@@ -331,7 +423,9 @@ def init_app(app, config: Optional[AppConfig] = None) -> None:
 
     # Flask basic config
     app.config['SECRET_KEY'] = config.security.secret_key
-    app.config['SQLALCHEMY_DATABASE_URI'] = config.database.get_uri()
+    resolved_uri, resolved_backend = config.database.resolve_uri()
+    app.config['SQLALCHEMY_DATABASE_URI'] = resolved_uri
+    app.config['DATABASE_TYPE'] = resolved_backend
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.config['SQLALCHEMY_ECHO'] = config.database.echo
     app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {

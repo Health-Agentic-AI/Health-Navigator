@@ -107,6 +107,20 @@ def validate_file_type(file_stream, filename):
         logger.error(f"Error validating file type: {e}", exc_info=True)
         return False, "Error validating file type", None
 
+
+def get_database_backend_type() -> str:
+    """Get active DB backend type from app config."""
+    configured_type = current_app.config.get("DATABASE_TYPE")
+    if configured_type:
+        return configured_type
+
+    uri = current_app.config.get("SQLALCHEMY_DATABASE_URI", "")
+    if uri.startswith("postgresql"):
+        return "postgresql"
+    if uri.startswith("mysql"):
+        return "mysql"
+    return "unknown"
+
 # --- Routes ---
 
 @main_bp.route('/')
@@ -533,7 +547,7 @@ def detailed_health_check():
         db.session.execute(text('SELECT 1'))
         health_info["components"]["database"] = {
             "status": "healthy",
-            "type": "postgresql"
+            "type": get_database_backend_type()
         }
     except Exception as e:
         logger.error(f"Database health check failed: {e}")
