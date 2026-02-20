@@ -23,7 +23,7 @@ Health-Navigator emulates how a medical team collaborates on a complex case. Jus
 
 The system takes user input (text and optional attachments), validates the medical intent, and routes images to the appropriate specialized models for analysis. It employs a multi-agent architecture where agents collaborate to retrieve data, analyze images, and formulate medical assessments. When the Medical Agent is uncertain about subtle or potentially outdated medical facts, it can invoke a Tavily-powered fact-check path restricted to high-authority medical sources.
 
-![Health-Navigator Workflow](Workflow Diagram\Workflow Diagram.drawio.png)
+![Health-Navigator Workflow](workflow_diagram/workflow_diagram.drawio.png)
 
 ## Technology Stack
 
