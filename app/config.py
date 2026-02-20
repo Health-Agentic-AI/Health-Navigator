@@ -261,7 +261,7 @@ class RateLimitConfig:
 @dataclass
 class APIConfig:
     """External API configuration."""
-    llm_provider: str = 'google'  # google or z.ai
+    llm_provider: str = 'google'  # google or z.ai (alias: zai)
     google_api_key: Optional[str] = None
     google_model: str = 'gemini-2.0-flash-exp'
     vision_model: str = 'gemini-2.0-flash-exp'
@@ -388,8 +388,12 @@ class AppConfig:
             raise ConfigValidationError('FLASK_SECRET_KEY must be set in production')
 
         provider = self.api.llm_provider.strip().lower()
+        if provider == 'zai':
+            provider = 'z.ai'
         if provider not in {'google', 'z.ai'}:
-            raise ConfigValidationError("LLM_PROVIDER must be either 'google' or 'z.ai'")
+            raise ConfigValidationError("LLM_PROVIDER must be one of: 'google', 'z.ai', or 'zai'")
+        # Persist normalized value for downstream checks.
+        self.api.llm_provider = provider
 
         # Validate active LLM provider credentials
         if provider == 'google' and not self.api.google_api_key:

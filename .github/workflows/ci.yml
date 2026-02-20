@@ -229,7 +229,7 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     environment:
       name: production
-      url: https://${{ secrets.DEPLOY_URL }}
+      url: ${{ vars.DEPLOY_URL }}
 
     steps:
       - name: Checkout code
@@ -250,7 +250,7 @@ jobs:
       - name: Health check
         run: |
           echo "Performing health check..."
-          # curl -f ${{ secrets.DEPLOY_URL }}/health || exit 1
+          # curl -f ${{ vars.DEPLOY_URL }}/health || exit 1
 
       - name: Notify deployment status
         if: always()

@@ -6,6 +6,9 @@ Health-Navigator is an intelligent medical workflow system designed to process, 
 
 Health-Navigator emulates how a medical team collaborates on a complex case. Just as a doctor might consult with radiologists, request additional tests, review patient history, and iteratively refine their understanding—this system uses multiple specialized agents that work together through a **reflection loop** to arrive at a comprehensive medical assessment.
 
+![Health-Navigator Interface](docs/images/interface_screenshot.png)
+*Chat interface preview showing how users can interact with the agent, upload medical files, and receive guided analysis in one workflow.*
+
 ### Key Principles
 
 | Principle | Description |
@@ -176,3 +179,4 @@ flask run
 ## Disclaimer
 
 Health-Navigator is an AI-assisted tool developed for experimentation and demonstration purposes. It is **not** a substitute for professional medical advice, diagnosis, or treatment. Always consult with a qualified healthcare provider for medical concerns.
+

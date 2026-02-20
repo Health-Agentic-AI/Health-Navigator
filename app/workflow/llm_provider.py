@@ -11,7 +11,7 @@ load_dotenv(os.path.join(os.getcwd(), "credentials.env"))
 DEFAULT_GOOGLE_MODEL = "gemini-3-flash-preview"
 DEFAULT_ZAI_MODEL = "glm-4.7"
 DEFAULT_ZAI_BASE_URL = "https://api.z.ai/api/paas/v4/"
-SUPPORTED_LLM_PROVIDERS = {"google", "z.ai"}
+SUPPORTED_LLM_PROVIDERS = {"google", "z.ai", "zai"}
 
 
 def normalize_llm_provider(provider: Optional[str]) -> str:
@@ -21,7 +21,7 @@ def normalize_llm_provider(provider: Optional[str]) -> str:
         return "z.ai"
     if normalized == "google":
         return "google"
-    raise ValueError("LLM_PROVIDER must be either 'google' or 'z.ai'")
+    raise ValueError("LLM_PROVIDER must be one of: 'google', 'z.ai', or 'zai'")
 
 
 def get_active_llm_provider() -> str:
