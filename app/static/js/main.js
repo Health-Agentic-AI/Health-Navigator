@@ -43,6 +43,15 @@ document.addEventListener('DOMContentLoaded', function () {
     const navbar = document.querySelector('.glass-navbar');
     let lastScroll = 0;
 
+    function syncNavbarHeightVariable() {
+        const navHeight = navbar ? Math.ceil(navbar.getBoundingClientRect().height) : 76;
+        document.documentElement.style.setProperty('--app-navbar-height', `${navHeight}px`);
+    }
+
+    syncNavbarHeightVariable();
+    window.addEventListener('resize', syncNavbarHeightVariable);
+    window.addEventListener('load', syncNavbarHeightVariable);
+
     window.addEventListener('scroll', () => {
         const currentScroll = window.pageYOffset;
 

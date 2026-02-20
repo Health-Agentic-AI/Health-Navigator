@@ -45,7 +45,7 @@
     {% block extra_css %}{% endblock %}
 </head>
 
-<body>
+<body class="{% block body_class %}{% endblock %}">
 
     <!-- Skip Links for Accessibility -->
     <a href="#main-content" class="skip-link">Skip to main content</a>
@@ -103,7 +103,7 @@
     </nav>
 
     <!-- Main Content -->
-    <main class="main-content" id="main-content" role="main" tabindex="-1">
+    <main class="main-content {% block main_content_class %}{% endblock %}" id="main-content" role="main" tabindex="-1">
         {% block content %}{% endblock %}
     </main>
 

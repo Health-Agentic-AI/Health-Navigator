@@ -3,9 +3,9 @@
  * Progressive Web App features: offline support, caching, background sync
  */
 
-const CACHE_NAME = 'health-navigator-v2';
-const STATIC_CACHE = 'health-navigator-static-v2';
-const DYNAMIC_CACHE = 'health-navigator-dynamic-v2';
+const CACHE_NAME = 'health-navigator-v4';
+const STATIC_CACHE = 'health-navigator-static-v4';
+const DYNAMIC_CACHE = 'health-navigator-dynamic-v4';
 
 // URLs to cache on install
 const STATIC_ASSETS = [

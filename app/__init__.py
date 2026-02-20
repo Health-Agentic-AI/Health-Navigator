@@ -60,7 +60,7 @@ def create_app(config=None):
             "default-src 'self'; "
             "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdn.gstatic.com https://stackpath.bootstrapcdn.com; "
             "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com https://use.fontawesome.com; "
-            "font-src 'self' https://fonts.gstatic.com https://use.fontawesome.com; "
+            "font-src 'self' https://fonts.gstatic.com https://use.fontawesome.com https://cdn.jsdelivr.net; "
             "img-src 'self' data: https:; "
             "connect-src 'self' https://generativelanguage.googleapis.com; "
             "frame-ancestors 'none'; "
