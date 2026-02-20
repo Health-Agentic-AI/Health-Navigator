@@ -1,6 +1,6 @@
-<mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36" version="29.3.1">
+<mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36" version="29.4.0">
   <diagram name="Page-1" id="FoH7uc9VNtGeSl--nc_r">
-    <mxGraphModel dx="6065" dy="1143" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+    <mxGraphModel dx="6594" dy="1943" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -176,7 +176,7 @@
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
         <mxCell id="yDWNk6znIDKUxYVE1vSK-62" parent="1" style="rounded=1;whiteSpace=wrap;html=1;glass=0;" value="Aggregator" vertex="1">
-          <mxGeometry height="143.44" width="120" x="-2890" y="-54.22" as="geometry" />
+          <mxGeometry height="143.44" width="120" x="-2890" y="-73.44" as="geometry" />
         </mxCell>
         <mxCell id="yDWNk6znIDKUxYVE1vSK-63" edge="1" parent="1" source="yDWNk6znIDKUxYVE1vSK-38" style="edgeStyle=orthogonalEdgeStyle;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0.003;entryY=0.074;entryDx=0;entryDy=0;entryPerimeter=0;" target="yDWNk6znIDKUxYVE1vSK-62">
           <mxGeometry relative="1" as="geometry">
@@ -225,7 +225,7 @@
           </mxGeometry>
         </mxCell>
         <mxCell id="yDWNk6znIDKUxYVE1vSK-77" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="Agent&lt;div&gt;&lt;br&gt;&lt;div&gt;(Make the&amp;nbsp;necessary calls to the Databases)&amp;nbsp;&lt;/div&gt;&lt;/div&gt;" vertex="1">
-          <mxGeometry height="175" width="120" x="-2650" y="-70" as="geometry" />
+          <mxGeometry height="225" width="160" x="-2660" y="-114.22" as="geometry" />
         </mxCell>
         <mxCell id="yDWNk6znIDKUxYVE1vSK-79" parent="1" style="rounded=1;whiteSpace=wrap;html=1;" value="Vector Database" vertex="1">
           <mxGeometry height="150" width="120" x="-2530" y="300" as="geometry" />
@@ -236,11 +236,11 @@
         <mxCell id="yDWNk6znIDKUxYVE1vSK-88" edge="1" parent="1" source="yDWNk6znIDKUxYVE1vSK-84" style="edgeStyle=orthogonalEdgeStyle;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="yDWNk6znIDKUxYVE1vSK-87">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="yDWNk6znIDKUxYVE1vSK-84" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="Medical Agent&lt;div&gt;&lt;br&gt;&lt;div&gt;(Gives all the thoughts and advices based on the user&#39;s information)&lt;/div&gt;&lt;/div&gt;" vertex="1">
-          <mxGeometry height="175" width="120" x="-2400" y="-70" as="geometry" />
+        <mxCell id="yDWNk6znIDKUxYVE1vSK-84" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="Medical Agent&lt;div&gt;&lt;br&gt;&lt;div&gt;(Gives all the analysis and advices based on the user&#39;s information)&lt;/div&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="225" width="160" x="-2420" y="-114.22" as="geometry" />
         </mxCell>
         <mxCell id="yDWNk6znIDKUxYVE1vSK-87" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="Output Refinement&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;(Make the output user freindly)&lt;/div&gt;" vertex="1">
-          <mxGeometry height="130" width="120" x="-2220" y="-47.5" as="geometry" />
+          <mxGeometry height="130" width="120" x="-2200" y="-66.72" as="geometry" />
         </mxCell>
         <mxCell id="XTvzzKBflyok1g1Ni2Y7-1" edge="1" parent="1" source="48MZo3OmgjpXJCcB6__6-2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.75;exitDx=0;exitDy=0;entryX=0.25;entryY=0;entryDx=0;entryDy=0;" target="yDWNk6znIDKUxYVE1vSK-80">
           <mxGeometry relative="1" as="geometry" />
@@ -278,7 +278,7 @@
             <mxPoint x="-2950" y="70" as="targetPoint" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="_ZPv0TfCWMB7J-HcjxOJ-2" edge="1" parent="1" source="yDWNk6znIDKUxYVE1vSK-84" style="curved=1;endArrow=classic;html=1;rounded=0;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="yDWNk6znIDKUxYVE1vSK-77" value="">
+        <mxCell id="_ZPv0TfCWMB7J-HcjxOJ-2" edge="1" parent="1" source="yDWNk6znIDKUxYVE1vSK-84" style="curved=1;endArrow=classic;html=1;rounded=0;exitX=0.25;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="yDWNk6znIDKUxYVE1vSK-77" value="">
           <mxGeometry height="50" relative="1" width="50" as="geometry">
             <Array as="points">
               <mxPoint x="-2480" y="-150" />
@@ -295,7 +295,8 @@
         <mxCell id="_ZPv0TfCWMB7J-HcjxOJ-5" edge="1" parent="1" source="yDWNk6znIDKUxYVE1vSK-77" style="curved=1;endArrow=classic;html=1;rounded=0;exitX=0.25;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="yDWNk6znIDKUxYVE1vSK-1" value="">
           <mxGeometry height="50" relative="1" width="50" as="geometry">
             <Array as="points">
-              <mxPoint x="-2820" y="-450" />
+              <mxPoint x="-2770" y="-240" />
+              <mxPoint x="-3200" y="-490" />
               <mxPoint x="-4010" y="-320" />
             </Array>
             <mxPoint x="-2730" y="-170" as="sourcePoint" />
@@ -309,6 +310,39 @@
         </mxCell>
         <mxCell id="SRNeHXxLHj1Ul6fkePaK-2" parent="1" style="whiteSpace=wrap;html=1;rounded=0;" value="Medical Vision Models" vertex="1">
           <mxGeometry height="60" width="120" x="-3120" y="-340" as="geometry" />
+        </mxCell>
+        <mxCell id="VZOMVoxGd61ymbLBOku7-1" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="Medical search tool" vertex="1">
+          <mxGeometry height="60" width="100" x="-2450" y="-270" as="geometry" />
+        </mxCell>
+        <mxCell id="VZOMVoxGd61ymbLBOku7-2" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="Medical Search LLM summarizer" vertex="1">
+          <mxGeometry height="60" width="100" x="-2330" y="-270" as="geometry" />
+        </mxCell>
+        <mxCell id="VZOMVoxGd61ymbLBOku7-4" edge="1" parent="1" source="yDWNk6znIDKUxYVE1vSK-84" style="curved=1;endArrow=classic;html=1;rounded=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;exitX=0.5;exitY=0;exitDx=0;exitDy=0;" target="VZOMVoxGd61ymbLBOku7-1" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry">
+            <Array as="points">
+              <mxPoint x="-2400" y="-160" />
+            </Array>
+            <mxPoint x="-2480" y="-50" as="sourcePoint" />
+            <mxPoint x="-2430" y="-100" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="VZOMVoxGd61ymbLBOku7-5" edge="1" parent="1" source="VZOMVoxGd61ymbLBOku7-1" style="curved=1;endArrow=classic;html=1;rounded=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;exitX=0.5;exitY=0;exitDx=0;exitDy=0;" target="VZOMVoxGd61ymbLBOku7-2" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry">
+            <Array as="points">
+              <mxPoint x="-2340" y="-330" />
+            </Array>
+            <mxPoint x="-2350" y="-340" as="sourcePoint" />
+            <mxPoint x="-2430" y="-470" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="VZOMVoxGd61ymbLBOku7-6" edge="1" parent="1" source="VZOMVoxGd61ymbLBOku7-2" style="curved=1;endArrow=classic;html=1;rounded=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="yDWNk6znIDKUxYVE1vSK-84" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry">
+            <Array as="points">
+              <mxPoint x="-2290" y="-140" />
+            </Array>
+            <mxPoint x="-2060" y="-50" as="sourcePoint" />
+            <mxPoint x="-2270" y="-100" as="targetPoint" />
+          </mxGeometry>
         </mxCell>
       </root>
     </mxGraphModel>
