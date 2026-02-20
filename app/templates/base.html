@@ -12,6 +12,7 @@
     <meta name="application-name" content="Health Navigator">
     <meta name="msapplication-TileColor" content="#5b7cfa">
     <meta name="msapplication-config" content="/static/browserconfig.xml">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{% block title %}Health Navigator{% endblock %}</title>
 
     <!-- PWA Manifest -->
@@ -44,7 +45,7 @@
     {% block extra_css %}{% endblock %}
 </head>
 
-<body>
+<body class="{% block body_class %}{% endblock %}">
 
     <!-- Skip Links for Accessibility -->
     <a href="#main-content" class="skip-link">Skip to main content</a>
@@ -102,7 +103,7 @@
     </nav>
 
     <!-- Main Content -->
-    <main class="main-content" id="main-content" role="main" tabindex="-1">
+    <main class="main-content {% block main_content_class %}{% endblock %}" id="main-content" role="main" tabindex="-1">
         {% block content %}{% endblock %}
     </main>
 

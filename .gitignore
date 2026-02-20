@@ -13,3 +13,5 @@ chroma_db/
 test_files/
 uploads/
 .vscode/settings.json
+app/workflow/ml_models/vision_models/colon_tissue_classifier/training/datasets/pathmnist_128.txt
+app/workflow/ml_models/vision_models/colon_tissue_classifier/training/datasets/pathmnist.npz.txt

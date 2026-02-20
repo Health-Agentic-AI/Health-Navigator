@@ -11,11 +11,20 @@ from llama_index.core.node_parser import SentenceSplitter
 from llama_index.retrievers.bm25 import BM25Retriever
 from llama_index.embeddings.google_genai import GoogleGenAIEmbedding
 from llama_index.llms.google_genai import GoogleGenAI
+from llama_index.embeddings.openai import OpenAIEmbedding, OpenAIEmbeddingModelType
+from llama_index.llms.openai import OpenAI
 from llama_index.core.vector_stores import MetadataFilters, MetadataFilter, FilterOperator, ExactMatchFilter
 from llama_index.core.schema import TextNode
 
 # Load environment variables
-load_dotenv(r'C:\My Projects\Health-Navigator\credentials.env')
+load_dotenv(os.path.join(os.getcwd(), '.env'))
+load_dotenv(os.path.join(os.getcwd(), 'credentials.env'))
+
+try:
+    # Optional official OpenAI-compatible embedding integration for LlamaIndex.
+    from llama_index.embeddings.openai_like import OpenAILikeEmbedding
+except Exception:
+    OpenAILikeEmbedding = None
 
 # Apply nest_asyncio for async operations in notebooks/scripts
 nest_asyncio.apply()
@@ -24,7 +33,7 @@ class HybridVectorDB:
     def __init__(self, user_id: str, base_db_path: str = r"C:\My Projects\Health-Navigator\app\workflow\vectordb\chroma_db", 
                  google_api_key: str = None, model_name: str = "models/embedding-001"):
         """
-        Initialize a user-isolated ChromaDB with Google embeddings.
+        Initialize a user-isolated ChromaDB with Google embeddings and LM Studio fallback.
         Each user gets their own folder to prevent database locking/corruption.
         """
         
@@ -36,13 +45,12 @@ class HybridVectorDB:
         if not os.path.exists(self.db_path):
             os.makedirs(self.db_path)
 
-        # 2. Setup Google Models (Passed explicitly to avoid global Settings conflicts)
-        api_key = google_api_key or os.getenv("GOOGLE_API_KEY")
-        if not api_key:
-            raise ValueError("Google API key required. Pass google_api_key or set GOOGLE_API_KEY env variable")
-        
-        self.llm = GoogleGenAI(model="gemini-2.5-flash-lite-preview-09-2025", api_key=api_key)
-        self.embed_model = GoogleGenAIEmbedding(model_name=model_name, api_key=api_key)
+        # 2. Setup Embeddings/LLM with fallback strategy:
+        #    Google GenAI first, then LM Studio OpenAI-compatible embeddings.
+        self.llm = None
+        self.embed_model = None
+        self.embedding_backend = "unknown"
+        self._init_models_with_fallback(google_api_key=google_api_key, google_model_name=model_name)
         
         # 3. Connect to ChromaDB (Persistent)
         # Using a persistent client on the user's specific folder
@@ -74,6 +82,75 @@ class HybridVectorDB:
         # 5. Load Nodes for BM25
         # We load directly from the collection to ensure BM25 has data to work with
         self.all_nodes = self._load_all_nodes()
+
+    def _normalize_lmstudio_api_base(self, url: str) -> str:
+        base = (url or "http://127.0.0.1:1234/v1").rstrip("/")
+        if not base.endswith("/v1"):
+            base = f"{base}/v1"
+        return base
+
+    def _init_models_with_fallback(self, google_api_key: Optional[str], google_model_name: str) -> None:
+        errors = []
+
+        # Try Google embeddings first.
+        api_key = google_api_key or os.getenv("GOOGLE_API_KEY")
+        if api_key:
+            try:
+                google_llm_model = os.getenv("GOOGLE_VECTOR_LLM_MODEL", "gemini-2.5-flash-lite-preview-09-2025")
+                google_embed_model = os.getenv("GOOGLE_EMBED_MODEL", google_model_name)
+
+                self.llm = GoogleGenAI(model=google_llm_model, api_key=api_key)
+                self.embed_model = GoogleGenAIEmbedding(model_name=google_embed_model, api_key=api_key)
+                self.embedding_backend = "google"
+                print(f"INFO: HybridVectorDB initialized with Google embeddings ({google_embed_model})")
+                return
+            except Exception as e:
+                errors.append(f"Google initialization failed: {e}")
+        else:
+            errors.append("Google initialization skipped: GOOGLE_API_KEY not set")
+
+        # Fallback to LM Studio OpenAI-compatible embeddings.
+        try:
+            lmstudio_api_base = self._normalize_lmstudio_api_base(os.getenv("LMSTUDIO_BASE_URL", "http://127.0.0.1:1234/v1"))
+            lmstudio_api_key = os.getenv("LMSTUDIO_API_KEY", "lm-studio")
+            lmstudio_embed_model = os.getenv("LMSTUDIO_EMBED_MODEL", "text-embedding-nomic-embed-text-v1.5")
+            lmstudio_llm_model = os.getenv("LMSTUDIO_LLM_MODEL", "").strip()
+
+            if OpenAILikeEmbedding is not None:
+                self.embed_model = OpenAILikeEmbedding(
+                    model_name=lmstudio_embed_model,
+                    api_key=lmstudio_api_key,
+                    api_base=lmstudio_api_base
+                )
+            else:
+                self.embed_model = OpenAIEmbedding(
+                    # OpenAIEmbedding validates `model` against known OpenAI enum values.
+                    # `model_name` overrides the actual request model, which lets us call
+                    # LM Studio OpenAI-compatible embedding models safely.
+                    model=OpenAIEmbeddingModelType.TEXT_EMBED_ADA_002,
+                    model_name=lmstudio_embed_model,
+                    api_key=lmstudio_api_key,
+                    api_base=lmstudio_api_base
+                )
+
+            # Optional LLM for fusion query generation; retrieval works with llm=None when num_queries=1.
+            if lmstudio_llm_model:
+                self.llm = OpenAI(
+                    model=lmstudio_llm_model,
+                    api_key=lmstudio_api_key,
+                    api_base=lmstudio_api_base,
+                    temperature=0.0
+                )
+            else:
+                self.llm = None
+
+            self.embedding_backend = "lmstudio"
+            print(f"INFO: HybridVectorDB initialized with LM Studio embeddings ({lmstudio_embed_model}) at {lmstudio_api_base}")
+            return
+        except Exception as e:
+            errors.append(f"LM Studio initialization failed: {e}")
+
+        raise ValueError("HybridVectorDB initialization failed. " + " | ".join(errors))
 
     def _load_all_nodes(self) -> List[TextNode]:
         """Load all nodes directly from ChromaDB collection for BM25 initialization."""

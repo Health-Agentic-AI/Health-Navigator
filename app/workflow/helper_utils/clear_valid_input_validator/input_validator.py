@@ -1,9 +1,12 @@
-from langchain_google_genai import ChatGoogleGenerativeAI
-from typing import TypedDict, Literal
+from typing import TypedDict, Literal, Iterable
+from functools import lru_cache
 from dotenv import load_dotenv
 import os
+import re
+from langchain_core.exceptions import OutputParserException
+from app.workflow.llm_provider import create_langchain_chat_model
 
-load_dotenv('C:\My Projects\Health-Navigator\credentials.env')
+load_dotenv(os.path.join(os.getcwd(), 'credentials.env'))
 
 
 system_prompt = f"""
@@ -58,39 +61,81 @@ class MedicalInputCheck(TypedDict):
 class TextOnlyInputValidator(TypedDict):
     input_classification: Literal["TEXT_VALID", "TEXT_NOT_VALID"]
 
+FIRST_INPUT_LABELS = (
+    "TEXT_VALID_ATTACHMENT_VALID",
+    "TEXT_VALID_ATTACHMENT_NOT_VALID",
+    "TEXT_NOT_VALID_ATTACHMENT_VALID",
+    "TEXT_NOT_VALID_ATTACHMENT_NOT_VALID",
+)
 
-structured_llm = ChatGoogleGenerativeAI(
-    model="gemini-2.5-flash-lite-preview-09-2025",
-    google_api_key=os.getenv("GOOGLE_API_KEY"),
-    
+TEXT_ONLY_LABELS = (
+    "TEXT_VALID",
+    "TEXT_NOT_VALID",
+)
+
+
+@lru_cache
+def get_structured_llm():
+    return create_langchain_chat_model(
+        google_model="gemini-2.5-flash-lite-preview-09-2025",
     ).with_structured_output(MedicalInputCheck)
 
-structured_llm_text_only = ChatGoogleGenerativeAI(
-    model="gemini-2.5-flash-lite-preview-09-2025",
-    google_api_key=os.getenv("GOOGLE_API_KEY"),
-    
+
+@lru_cache
+def get_structured_llm_text_only():
+    return create_langchain_chat_model(
+        google_model="gemini-2.5-flash-lite-preview-09-2025",
     ).with_structured_output(TextOnlyInputValidator)
+
+
+@lru_cache
+def get_raw_llm():
+    return create_langchain_chat_model(
+        google_model="gemini-2.5-flash-lite-preview-09-2025",
+    )
+
+
+def _extract_label(raw_output: str, allowed_labels: Iterable[str]) -> str | None:
+    text = str(raw_output).strip().upper()
+    for label in sorted(allowed_labels, key=len, reverse=True):
+        if re.search(rf"\b{re.escape(label)}\b", text):
+            return label
+    return None
 
 
 def validate_first_input(input_text: str, available_attachments=None):
 
     available_attachments = available_attachments if available_attachments else "The user did not provide any attachments."
-
-    result = structured_llm.invoke([
+    messages = [
         ("system", system_prompt),
         ("human", f"Text: {input_text}\nAttachments: {available_attachments}"),
-        
-    ])
+    ]
 
-    return result['input_classification']
+    try:
+        structured_llm = get_structured_llm()
+        result = structured_llm.invoke(messages)
+        return result["input_classification"]
+    except (OutputParserException, KeyError, TypeError, ValueError):
+        raw_llm = get_raw_llm()
+        raw_response = raw_llm.invoke(messages)
+        raw_content = getattr(raw_response, "content", raw_response)
+        label = _extract_label(raw_content, FIRST_INPUT_LABELS)
+        return label or "TEXT_NOT_VALID_ATTACHMENT_NOT_VALID"
 
 def validate_input_text_only(title, input_text: str):
 
-
-    result = structured_llm_text_only.invoke([
+    messages = [
         ("system", system_prompt_text_only),
         ("human", f"Title: {title}, Input Text: {input_text}"),
-        
-    ])
+    ]
 
-    return result['input_classification']
+    try:
+        structured_llm_text_only = get_structured_llm_text_only()
+        result = structured_llm_text_only.invoke(messages)
+        return result["input_classification"]
+    except (OutputParserException, KeyError, TypeError, ValueError):
+        raw_llm = get_raw_llm()
+        raw_response = raw_llm.invoke(messages)
+        raw_content = getattr(raw_response, "content", raw_response)
+        label = _extract_label(raw_content, TEXT_ONLY_LABELS)
+        return label or "TEXT_NOT_VALID"

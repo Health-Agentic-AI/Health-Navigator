@@ -317,7 +317,13 @@ document.addEventListener('DOMContentLoaded', function () {
                     body: formData
                 });
 
-                const data = await response.json();
+                let data = {};
+                try {
+                    data = await response.json();
+                } catch (parseErr) {
+                    const rawText = await response.text();
+                    data = { error: rawText || 'Unexpected server response' };
+                }
 
                 console.log('Backend response:', data);
 

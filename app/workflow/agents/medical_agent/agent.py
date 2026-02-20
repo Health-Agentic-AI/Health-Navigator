@@ -1,7 +1,6 @@
 import os
 from typing import Dict, Any
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage, AIMessage
-from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_community.utilities import SQLDatabase
 from langchain_community.agent_toolkits import SQLDatabaseToolkit
 from langchain_core.tools import tool
@@ -13,6 +12,8 @@ sys.path.append(r"C:\My Projects\Health-Navigator")
 
 from dotenv import load_dotenv
 load_dotenv(r'C:\My Projects\Health-Navigator\credentials.env')
+
+from app.workflow.llm_provider import create_langchain_chat_model
 
 
 
@@ -324,10 +325,10 @@ NEED_MORE_INFO: Tell me everything about the patient.
 You are an AI assistant supporting healthcare decisions, not replacing healthcare professionals."""
 
 
-llm = ChatGoogleGenerativeAI(
-    model="gemini-3-flash-preview",
-    google_api_key=os.environ["GOOGLE_API_KEY"],
-    name="Medical Agent"
+def get_llm():
+    return create_langchain_chat_model(
+        agent_name="Medical Agent",
+        google_model="gemini-3-flash-preview",
     )
 
 def invoke_medical_agent(
@@ -375,7 +376,8 @@ def invoke_medical_agent(
         SystemMessage(content=formatted_system_prompt),
         HumanMessage(content=medical_context)
     ]
-    
+
+    llm = get_llm()
     response = llm.invoke(messages)
     
     # Extract content properly

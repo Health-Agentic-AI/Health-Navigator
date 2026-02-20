@@ -13,12 +13,13 @@ from langchain.tools import tool
 from langchain_community.agent_toolkits.sql.toolkit import SQLDatabaseToolkit
 from langchain_community.utilities.sql_database import SQLDatabase
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_google_genai import ChatGoogleGenerativeAI
 
 from app.workflow.ml_models.numerical_models.heart_disease.heart_disease import predict_heart_disease
 from app.workflow.ml_models.numerical_models.stroke_prediction.stroke_predictions import predict_stroke_risk
 from app.workflow.ml_models.numerical_models.cancer_predictions_module.Cancer_prediction import predict_cancer
 from app.workflow.vectordb.vectordb import HybridVectorDB
+from app.workflow.llm_provider import create_langchain_chat_model
+from app.config import DatabaseConfig
 
 @tool
 def predict_heart_disease_tool(
@@ -346,18 +347,19 @@ def retrieve_from_vector_db(
 
 
 def get_llm():
-    return ChatGoogleGenerativeAI(
-        model="gemini-3-flash-preview",
-        google_api_key=os.environ.get("GOOGLE_API_KEY"),
-        name="Numerical Models Agent"
+    return create_langchain_chat_model(
+        agent_name="Numerical Models Agent",
+        google_model="gemini-3-flash-preview",
     )
 
 def get_sql_db():
     try:
-        pg_uri = f'postgresql+psycopg2://{os.environ.get("POSTGRES_USERNAME")}:{os.environ.get("POSTGRES_PASSWORD")}@{os.environ.get("POSTGRES_HOST")}:{os.environ.get("POSTGRES_PORT")}/{os.environ.get("DATABASE_NAME")}'
-        return SQLDatabase.from_uri(pg_uri)
+        db_config = DatabaseConfig.from_env()
+        resolved_uri, resolved_backend = db_config.resolve_uri()
+        print(f"Connected to {resolved_backend} database backend.")
+        return SQLDatabase.from_uri(resolved_uri)
     except Exception as e:
-        print(f"Failed to connect to DB: {e}")
+        print(f"Failed to connect to PostgreSQL and MySQL: {e}")
         return None
 
 def create_agent_for_user(user_id: str):

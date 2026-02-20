@@ -6,6 +6,9 @@ Health-Navigator is an intelligent medical workflow system designed to process, 
 
 Health-Navigator emulates how a medical team collaborates on a complex case. Just as a doctor might consult with radiologists, request additional tests, review patient history, and iteratively refine their understanding—this system uses multiple specialized agents that work together through a **reflection loop** to arrive at a comprehensive medical assessment.
 
+![Health-Navigator Interface](docs/images/interface_screenshot.png)
+*Chat interface preview showing how users can interact with the agent, upload medical files, and receive guided analysis in one workflow.*
+
 ### Key Principles
 
 | Principle | Description |
@@ -25,10 +28,12 @@ The system takes user input (text and optional attachments), validates the medic
 ## Technology Stack
 
 *   **Orchestration**: [LangGraph](https://langchain-ai.github.io/langgraph/) (StateGraph, MemorySaver) for managing state, cycles, and persistence.
-*   **LLM**: Google Gemini (via `langchain-google-genai`) for reasoning, validation, and medical assessment.
+*   **LLM**: Provider-switchable via env:
+    *   **Google Gemini** (via `langchain-google-genai`)
+    *   **z.ai / GLM** (via OpenAI-compatible `langchain-openai` + custom `base_url`)
 *   **Backend**: Flask for the API and application server.
 *   **Database**:
-    *   **PostgreSQL**: Stores structured patient data (medications, appointments, labs, vitals).
+    *   **PostgreSQL** (primary) and **MySQL** (automatic fallback): stores structured patient data (medications, appointments, labs, vitals).
     *   **Hybrid Vector DB**: Stores unstructured documents (clinical notes, reports, scans). It utilizes a **Hybrid Search Strategy** combining **Semantic Search** (embeddings) for conceptual matching and **BM25** for precise keyword matching.
 *   **Computer Vision**: PyTorch (ResNet18-based custom models) for X-ray and tissue analysis.
 
@@ -134,6 +139,13 @@ flask run
 - `results/cancer_model.pth` / `results/heart_model.pth`
 - `results/scaler.pkl`, `results/feature_names.pkl`
 
+**Environment highlights:**
+- `LLM_PROVIDER=google` or `LLM_PROVIDER=z.ai`
+- For Google: set `GOOGLE_API_KEY` (and optionally `GOOGLE_MODEL`)
+- For z.ai: set `ZAI_API_KEY`, `ZAI_MODEL` (e.g. `glm-4.7`), and `ZAI_BASE_URL`
+- Structured DB connection now attempts PostgreSQL first, then MySQL fallback using the configured DB fields.
+
 ## Disclaimer
 
 Health-Navigator is an AI-assisted tool developed for experimentation and demonstration purposes. It is **not** a substitute for professional medical advice, diagnosis, or treatment. Always consult with a qualified healthcare provider for medical concerns.
+
