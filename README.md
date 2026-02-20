@@ -21,7 +21,7 @@ Health-Navigator emulates how a medical team collaborates on a complex case. Jus
 
 ## Workflow Overview
 
-The system takes user input (text and optional attachments), validates the medical intent, and routes images to the appropriate specialized models for analysis. It employs a multi-agent architecture where agents collaborate to retrieve data, analyze images, and formulate medical assessments.
+The system takes user input (text and optional attachments), validates the medical intent, and routes images to the appropriate specialized models for analysis. It employs a multi-agent architecture where agents collaborate to retrieve data, analyze images, and formulate medical assessments. When the Medical Agent is uncertain about subtle or potentially outdated medical facts, it can invoke a Tavily-powered fact-check path restricted to high-authority medical sources.
 
 ![Health-Navigator Workflow](Workflow%20Diagram/Workflow%20Diagram.drawio.png)
 
@@ -36,6 +36,7 @@ The system takes user input (text and optional attachments), validates the medic
     *   **PostgreSQL** (primary) and **MySQL** (automatic fallback): stores structured patient data (medications, appointments, labs, vitals).
     *   **Hybrid Vector DB**: Stores unstructured documents (clinical notes, reports, scans). It utilizes a **Hybrid Search Strategy** combining **Semantic Search** (embeddings) for conceptual matching and **BM25** for precise keyword matching.
 *   **Computer Vision**: PyTorch (ResNet18-based custom models) for X-ray and tissue analysis.
+*   **External Medical Fact Search**: Tavily API with high-authority medical source filtering.
 
 ## System Architecture & Agents
 
@@ -51,37 +52,6 @@ The workflow is composed of several specialized nodes and agents that interact d
 ### 2. The Reflection Loop: Medical Agent ↔ Information Retriever
 
 This is the **core intelligence** of the system. The Medical Agent and Information Retriever Agent engage in an iterative dialogue, much like a physician consulting with a medical records specialist.
-
-#### How It Works
-
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                    REFLECTION LOOP (max N iterations)                │
-├─────────────────────────────────────────────────────────────────────┤
-│                                                                     │
-│   ┌─────────────────┐      INFORMATION REQUEST      ┌─────────────┐ │
-│   │  Medical Agent  │ ─────────────────────────────▶│  Retriever  │ │
-│   │                 │   "I need patient's blood    │    Agent    │ │
-│   │  Analyzes case  │    pressure readings from     │             │ │
-│   │  & identifies  │    the past 6 months"         │  Searches:  │ │
-│   │  gaps in info  │◀─────────────────────────────│  • Vector DB│ │
-│   └─────────────────┘      RETRIEVED DATA          │  • SQL DB   │ │
-│            │                  + new context         │  • Ask User│ │
-│            │                                       └─────────────┘ │
-│            │                                                      │
-│            ▼                                                      │
-│   ┌─────────────────┐                                            │
-│   │  Satisfied?     │    No ───────────────────────────────┐     │
-│   └─────────────────┘                                       │     │
-│            │ Yes                                            │     │
-│            ▼                                                │     │
-│   ┌─────────────────┐                                       │     │
-│   │  Generate Final │◀──────────────────────────────────────┘     │
-│   │  Assessment     │                                              │
-│   └─────────────────┘                                              │
-│                                                                     │
-└─────────────────────────────────────────────────────────────────────┘
-```
 
 #### Step-by-Step Breakdown
 
@@ -104,7 +74,9 @@ This is the **core intelligence** of the system. The Medical Agent and Informati
 
 ---
 
-### 3. Intelligent Agents
+### 3. Intelligent ML backed Agents
+
+We make the Agents dedicated ML/DL models for medical prediction because they provide a high level of clinically validated predictions that simply LLMs cannot reliably achieve for high-precision prediction tasks, while the LLMs focuse on reasoning, synthesis, and explanation.
 
 #### 🧠 Numerical Models Agent
 Analyzes structured patient data to predict health risks using neural networks.
@@ -126,6 +98,7 @@ A specialized agent responsible for gathering patient context without hallucinat
 The central reasoning engine that acts as the "doctor" in the loop.
 *   **Clinical Assessment**: Synthesizes outputs from all other agents into a cohesive medical analysis
 *   **Reflection Loop Driver**: Determines when more information is needed and drives the iterative retrieval process
+*   **Targeted Web Verification**: Invokes Tavily only when clinical facts are uncertain, subtle, or time-sensitive; results are summarized before use
 
 ### 4. Output Refinement
 *   **Refiner Node**: The `output_refiner_node` takes the raw clinical output and reformats it to be user-friendly and empathetic, while strictly adhering to the original medical facts (no hallucinations or alterations of diagnoses).
@@ -174,6 +147,7 @@ flask run
 - `LLM_PROVIDER=google` or `LLM_PROVIDER=z.ai`
 - For Google: set `GOOGLE_API_KEY` (and optionally `GOOGLE_MODEL`)
 - For z.ai: set `ZAI_API_KEY`, `ZAI_MODEL` (e.g. `glm-4.7`), and `ZAI_BASE_URL`
+- For external medical fact-check search: set `TAVILY_API_KEY`
 - Structured DB connection now attempts PostgreSQL first, then MySQL fallback using the configured DB fields.
 
 ## Disclaimer
